@@ -1,0 +1,282 @@
+﻿@using System.Activities
+@using Travel.Models
+@model Travel.Models.PageModel
+
+@{
+    ViewBag.Title = "VoucharReport";
+    Layout = null;
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    Int64 compid = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+    string companyName = "", address = "", contactNo = "";
+    TravelDbContext db = new TravelDbContext();
+    var SelectUserName = from n in db.AslCompanyDbSet
+                         where n.COMPID == compid
+                         select new { n.COMPNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectUserName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    string vouchar = Convert.ToString(Model.RPDRCR.TRANSFOR); //
+    string Vouchar = "", lebel1 = "", lebel2 = "";
+    var forREC = from n in db.GlAcchartDbSet where n.COMPID == compid select n;
+
+    if (vouchar == "RECEIVABLE")
+    {
+        string debitcd = Convert.ToString(Model.RPDRCR.ACCOUNTCD).Substring(0, 10);
+        Int64 debit = Convert.ToInt64(debitcd);
+        foreach (var x in forREC)
+        {
+            if (x.ACCOUNTCD == debit)
+            {
+                Vouchar = "CREDIT VOUCHER" + "-" + x.ACCOUNTNM;
+                break;
+            }
+        }
+        lebel1 = "Received To ";
+        lebel2 = "Received From ";
+    }
+    else if (vouchar == "PAYABLE")
+    {
+        string creditcd = Convert.ToString(Model.RPDRCR.ACCOUNTCD).Substring(0, 10);
+        Int64 credit = Convert.ToInt64(creditcd);
+        foreach (var x in forREC)
+        {
+            if (x.ACCOUNTCD == credit)
+            {
+                Vouchar = "DEBIT VOUCHER" + "-" + x.ACCOUNTNM;
+                break;
+            }
+        }
+        lebel1 = "Paid To ";
+        lebel2 = "Paid From ";
+    }
+   
+
+
+    var InvoiceNo = Model.RPDRCR.TRANSNO;
+    var date = Model.RPDRCR.TRANSDT;
+    Int64 dd = 0,cc=0;
+    if (vouchar == "RECEIVABLE")
+    {
+        dd = Convert.ToInt64(Convert.ToString(compid)+"1010001");
+        cc = Model.RPDRCR.ACCOUNTCD;
+    }
+    else if (vouchar == "PAYABLE")
+    {
+         dd = Model.RPDRCR.ACCOUNTCD;
+        cc = Convert.ToInt64(Convert.ToString(compid)+"1010001");
+    }
+  
+    string dds = "", ccs = "";
+    var forddcc = from n in db.GlAcchartDbSet where n.COMPID == compid select n;
+    foreach (var x in forddcc)
+    {
+        if (x.ACCOUNTCD == dd)
+        {
+            dds = x.ACCOUNTNM;
+        }
+        if (x.ACCOUNTCD == cc)
+        {
+            ccs = x.ACCOUNTNM;
+        }
+    }
+
+    string amount = "", InWords = "";
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+    Decimal totalGross = 0;
+
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+<body>
+
+
+
+
+    <table style="width:700px">
+        <tr style="background-color: #00689b">
+            @if (compid == 102)
+            {
+                <td colspan="1">
+                    <img src="~/Content/AdminPanel/images/planet.jpg" style="width: 100%" height="70" alt="" />
+                </td>
+            }
+            else
+            {
+                <td colspan="1">
+                    @*<img src="~/Content/AdminPanel/images/planet.jpg" style="width: 100%" height="70" alt="" />*@
+                </td>
+            }
+            <td colspan="5">
+                <h3 style="color: white" align="center">@compNm</h3>
+                <p style="color:white" align="center">@Address</p>
+                <p style="color:white" align="center"> Phone: @contactno</p>
+            </td>
+
+
+
+        </tr>
+
+        <tr style="width:100%">
+            <td colspan="6">
+                <h3 style="font-size: larger" align="center">
+                    @Vouchar
+
+                </h3>
+            </td>
+
+
+        </tr>
+
+
+
+        <tr style="outline: thin solid">
+            <td align="left" colspan="3" style="padding-left:8px">Invoice : <span>@InvoiceNo</span> </td>
+            @{
+                string a = Convert.ToString(date);
+                DateTime invoicedate = DateTime.Parse(a);
+                string InvDate = invoicedate.ToString("dd-MMM-yyyy");
+            }
+            <td align="right" colspan="3">Date : <span>@InvDate</span></td>
+
+
+        </tr>
+        <tr style="outline: thin solid">
+            <td colspan="1" style="padding-left:8px">@lebel1 </td>
+            <td colspan="5">: @dds </td>
+        </tr>
+        <tr style="outline: thin solid">
+            <td colspan="1" style="padding-left:8px">@lebel2 </td>
+            <td colspan="5">: @ccs </td>
+        </tr>
+        <tr style="background-color: #00689b; outline: thin solid">
+            <td style="color: white" align="center" colspan="3">Particulars</td>
+
+            <td style="color: white" align="center" colspan="3">Amount</td>
+
+
+
+        </tr>
+
+        <tr>
+            <td colspan="3" style="padding-left:8px">
+                @Model.RPDRCR.REMARKS
+            </td>
+            <td colspan="3" align="right">
+                @Model.RPDRCR.AMTCASH
+            </td>
+
+
+        </tr>
+
+
+
+        <tr>
+
+
+            <td colspan="3" align="right"><strong>Total:</strong></td>
+            <td colspan="3" align="right"><strong>@Model.RPDRCR.AMTCASH</strong></td>
+        </tr>
+
+
+
+       
+                <tr>
+                    <td colspan="1" align="left" style="padding-left:8px">Card No : </td>
+                    <td colspan="2" align="left">: @Model.passenger.CARDNO</td>
+                    <td colspan="1" align="left" style="padding-left:8px">Name : </td>
+                    <td colspan="3" align="left">: @Model.passenger.PSGRNM</td>
+                </tr>
+            
+           
+           
+         
+
+      
+
+        @{
+            amount = Convert.ToString(Model.RPDRCR.AMTCASH);
+            InWords = SpellAmount.MoneyConvFn(amount);
+
+        }
+
+        <tr style="outline: thin solid">
+
+
+            <td colspan="6" align="left" style="padding-left:8px">In Words : <span>@InWords</span></td>
+
+        </tr>
+
+        <tr style="height: 35px">
+            <td></td>
+            <td></td>
+
+        </tr>
+
+        <tr>
+            <td>Received By</td>
+            <td>Prepared By</td>
+            <td></td>
+            <td>Checked By</td>
+            <td>Authorised By</td>
+
+        </tr>
+        <tr style="background-color: #00689b">
+            <td colspan="3" style="color: white;padding:8px" align="left">
+                Powered By Alchemy Software
+            </td>
+            <td align="right" colspan="3" style="color: white; padding: 8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+        </tr>
+
+
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

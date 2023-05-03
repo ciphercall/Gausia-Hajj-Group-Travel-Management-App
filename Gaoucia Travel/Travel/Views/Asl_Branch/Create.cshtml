@@ -1,0 +1,332 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using Travel.Models
+@model Travel.Models.ASL.Asl_Branch
+
+@{
+
+    ViewBag.Title = "Create";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var UserNameVL = "";
+    var LoginIdVL = "";
+    //var passwordVL = "";
+    
+       TravelDbContext db = new TravelDbContext();
+
+    List<SelectListItem> listStatus = new List<SelectListItem>();
+    listStatus.Add(new SelectListItem { Text = "Active", Value = "A" });
+    listStatus.Add(new SelectListItem { Text = "Inactive", Value = "I" });
+    
+    List<SelectListItem>listcompany=new List<SelectListItem>();
+    var companyList=(from n in db.AslCompanyDbSet select n).ToList();
+    foreach(var x in companyList)
+    {
+            listcompany.Add(new SelectListItem { Text = Convert.ToString(x.COMPNM), Value = Convert.ToString(x.COMPID) });
+    }
+
+
+    var compid = "";
+    var comnm = "";
+    var comad = "";
+    var comco = "";
+    var comemail = "";
+    var compassword = "";
+
+ 
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+
+    var InUserId = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedUserID"]);
+
+
+  
+    if (LoggedUserTp == "AslSuperadmin" && LoggedUserStatus == "A")
+    {
+        
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+
+
+}
+<link href="~/Content/newcss/jquery-ui.css" rel="stylesheet" />
+
+
+<link href="~/Content/newcss/ng-grid.css" rel="stylesheet" />
+<link rel="stylesheet" href="~/Content/style.css" />
+<link href="~/Content/bootstrap_datepicker_css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap_datepicker_css/datepicker3.css" rel="stylesheet" />
+
+
+
+
+@*<script src="~/Content/jquery1.8.0/jquery.min.js"></script>
+
+
+<script src="~/Content/jquery1.9.1/jquery-1.9.1.js"></script>
+
+
+<script src="~/Content/jquery1.10.3/jquery-ui.js"></script>*@
+@*<script>document.write('<base href="' + document.location + '" />');</script>*@
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+
+ 
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Branch Information</h1>
+
+
+    </div>
+    <br />
+    <div class="col-md-12">
+        @*@if (TempData["UserCreationMessage"] != null)
+        {
+            <div class="panel-heading text-center">
+                <h4 style="color: #226699">@TempData["UserCreationMessage"]</h4>
+            </div>
+        }*@
+        @Html.HiddenFor(model => model.INSUSERID, new { id = "InUserID", style = "width:5em;", @Value = InUserId })
+        <div class="form-group" ng-app="BranchApp" data-ng-controller="ApiBranchController">
+            <div class="row">
+                    <div class="col-md-3">
+                        <label>Company Name</label>
+                    </div>
+                    <div class="col-md-8">
+                        @Html.DropDownListFor(model => model.COMPID,listcompany, new { id = "txtcompid", @class = "form-control" })
+                    </div>
+                </div>
+                <br />
+
+
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Branch name")
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.BRANCHNM, new { @class = "form-control", id = "BranchName" })
+                    @Html.ValidationMessageFor(model => model.BRANCHNM, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.ADDRESS, htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.ADDRESS, htmlAttributes: new { @class = "form-control", id = "Address" })
+                    @Html.ValidationMessageFor(model => model.ADDRESS, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.CONTACTNO, htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.CONTACTNO, htmlAttributes: new { @class = "form-control", id = "Contactno" })
+                    @Html.ValidationMessageFor(model => model.CONTACTNO, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.EMAILID, htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.EMAILID, htmlAttributes: new { @class = "form-control", id = "Email" })
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.STATUS, htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.DropDownListFor(model => model.STATUS, listStatus, "--Select STATUS--", htmlAttributes: new { @class = "form-control", id = "status" })
+                    @Html.ValidationMessageFor(model => model.STATUS, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+
+            @Html.TextBoxFor(model => model.INSLTUDE, new { id = "latlonPos", style = "display: none;" })
+            <input id="lat" type="hidden" />
+            <input id="lon" type="hidden" />
+
+            <br />
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-6">
+                    <input type="submit" value="Save" data-ng-click="add($event)" class="btn btn-primary" />
+                </div>
+
+            </div>
+            <br />
+            <div class="row">
+
+
+
+                <div class="panel panel-primary">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <tr>
+                                <td class="col-md-2"><label>Company ID</label></td>
+                                <td class="col-md-2"><label>Branch Name</label></td>
+                                <td class="col-md-2"><label>Address</label>
+                                <td class="col-md-2"><label>Contact No</label></td>
+                                <td class="col-md-2"><label>Email </label></td>
+                                <td class="col-md-1"><label>Status</label></td>
+
+                                <td></td>
+                            </tr>
+
+                            <tr data-ng-repeat="item in branchdata">
+                                @*<td hidden><strong data-ng-hide="item.editMode">{{item.COMPID}}</strong></td>*@
+                                <td hidden><strong data-ng-hide="item.editMode">{{item.BRANCHID}}</strong></td>
+                                <td class="col-md-2">
+                                    <p data-ng-hide="item.editMode">{{ item.COMPID }}</p>
+                                   
+                                </td>
+                                <td class="col-md-2">
+                                    <p data-ng-hide="item.editMode">{{ item.BRANCHNM }}</p>
+                                    @*@Html.DropDownListFor(model => model.Type, type, new
+                                        {
+                                            //data_ng_model = "item.TestCategoryName",
+                                            data_ng_show = "item.editMode",
+                                            @class = "form-control input-sm"
+                                        })*@
+                                    <input data-ng-show="item.editMode" type="text" data-ng-model="item.BRANCHNM" class="form-control input-sm" />
+                                </td>
+                                <td class="col-md-2">
+                                    <p data-ng-hide="item.editMode">{{ item.ADDRESS }}</p>
+                                    <input data-ng-show="item.editMode" type="text" data-ng-model="item.ADDRESS" class="form-control input-sm" />
+                                </td>
+                                <td class="col-md-2">
+                                    <p data-ng-hide="item.editMode">{{ item.CONTACTNO }}</p>
+                                    <input data-ng-show="item.editMode" type="text" data-ng-model="item.CONTACTNO" class="form-control input-sm" />
+                                </td>
+                                <td class="col-md-2">
+                                    <p data-ng-hide="item.editMode">{{ item.EMAILID }}</p>
+                                    <input data-ng-show="item.editMode" type="text" data-ng-model="item.EMAILID" class="form-control input-sm" />
+                                </td>
+                                <td class="col-md-1">
+                                    <p data-ng-hide="item.editMode">{{ item.STATUS }}</p>
+                                    @Html.DropDownListFor(model => model.STATUS, listStatus, new
+        {
+            id = "gridstatus",
+            data_ng_show = "item.editMode",
+            @class = "form-control input-sm"
+        })
+                                    @*<input data-ng-show="item.editMode" type="text" data-ng-model="item.STATUS" class="form-control input-sm" />*@
+                                </td>
+
+                                <td class="col-md-1">
+                                    <p data-ng-hide="item.editMode">
+                                        <a data-ng-click="toggleEdit(item)" href="javascript:;">Edit</a> | <a confirmed-click="deleteitem(item)"
+                                                                                                              ng-confirm-click="Would you like to Delete?" href="javascript:;">Delete</a>
+                                    </p>
+                                    <p data-ng-show="item.editMode"><a data-ng-click="save(item)" href="javascript:;">Save</a> | <a data-ng-click="cancel()" href="javascript:;">Cancel</a></p>
+                                </td>
+                            </tr>
+
+
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+  
+
+    //Latitute & longitude
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+    <script language="javascript" type="text/javascript">
+        $(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+            //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+            function showPosition(position) {
+                var coordinates = position.coords;
+                $("#lat").val(coordinates.latitude);
+                $("#lon").val(coordinates.longitude);
+
+                $("#latlon").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+            }
+        });
+
+
+
+      
+
+
+
+    </script>
+}
+
+
+
+@*<style type="text/css">
+    .completionList {
+        border: solid 1px Gray;
+        margin: 0px;
+        padding: 3px;
+        height: 120px;
+        overflow: auto;
+        background-color: #FFFFFF;
+    }
+
+    .listItem {
+        color: #191919;
+    }
+
+    .itemHighlighted {
+        background-color: #ADD6FF;
+    }
+</style>*@
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jqueryui")
+    @Scripts.Render("~/bundles/jqueryval")
+
+}
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+
+
+<script src="~/Scripts/angularjs/1.0.5/angular.js"></script>
+<script src="~/Scripts/Branch/Branch.js"></script>
+
+<script src="~/Scripts/angularjs/ui-bootstrap-tpls-0.4.0.js"></script>
+
+
+
+
+<script src="~/Scripts/Underscore.js"></script>

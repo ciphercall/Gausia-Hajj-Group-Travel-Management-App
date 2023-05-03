@@ -1,0 +1,620 @@
+﻿
+@using System.Data
+@using System.Data.SqlClient
+@using Travel.Models.Travel
+@using Travel.Models
+@model Travel.Models.Travel.TAMS_PSNGRCARD
+
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    TravelDbContext db = new TravelDbContext();
+
+    Int64 compid = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+
+
+
+
+
+
+
+
+    TAMS_PSNGRCARD amodel = new TAMS_PSNGRCARD();
+
+    amodel = (TAMS_PSNGRCARD)TempData["FirstPartCreate_Model"];
+
+
+
+
+    List<SelectListItem> listCardno = new List<SelectListItem>();
+    var cardno = from n in db.passengerDbSet where n.COMPID == compid select new { n.CARDNO };
+    foreach (var x in cardno)
+    {
+        listCardno.Add(new SelectListItem { Text = Convert.ToString(x.CARDNO), Value = Convert.ToString(x.CARDNO) });
+    }
+
+
+    List<SelectListItem> yesorno = new List<SelectListItem>();
+    yesorno.Add(new SelectListItem { Text = "NO", Value = "N" });
+    yesorno.Add(new SelectListItem { Text = "YES", Value = "Y" });
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+}
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.COMPID, new { @Value = compid })
+    @Html.HiddenFor(model => model.Id, new { id = "txtid" })
+
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Create Passenger's Card Information(2nd Part)</h1>
+        @if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A")
+        {
+            var createStatus = "";
+            var updateStatus = "";
+            var deleteStatus = "";
+            var status = "";
+            var loggedUserID = HttpContext.Current.Session["loggedUserID"].ToString();
+            System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["TravelDbContext"].ToString());
+
+            string query1 = string.Format("SELECT STATUS, INSERTR, UPDATER, DELETER FROM ASL_ROLE WHERE  CONTROLLERNAME='PassCard' AND COMPID='{0}' AND USERID = '{1}'", compid, loggedUserID);
+
+            System.Data.SqlClient.SqlCommand cmd1 = new System.Data.SqlClient.SqlCommand(query1, conn);
+            conn.Open();
+
+            SqlDataAdapter da1 = new SqlDataAdapter(cmd1);
+            DataTable ds1 = new DataTable();
+            da1.Fill(ds1);
+
+            foreach (DataRow row in ds1.Rows)
+            {
+                status = row["STATUS"].ToString();
+                createStatus = row["INSERTR"].ToString();
+                updateStatus = row["UPDATER"].ToString();
+                deleteStatus = row["DELETER"].ToString();
+            }
+            conn.Close();
+
+            if (createStatus == 'A'.ToString())
+            {
+                <ul class="nav nav-tabs" role="tablist">
+                    <li>@Html.ActionLink("1st Part", "FirstPartCreate", "PassCard", new { style = "color: black" })</li>
+                    <li class="active">@Html.ActionLink("2nd Part", "SecondPartCreate", "PassCard", new { style = "color: black;background-color: gainsboro;" }) </li>
+                </ul>
+            }
+            <div class="btn-group pull-right" id="editOption">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                    <i class="fa fa-cog"></i>
+                </button>
+                <ul class="dropdown-menu pull-right" style="" role="menu">
+                    @if (createStatus == 'A'.ToString() && updateStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("FirstPartCreate", "PassCard")"><i class="fa fa-plus"></i>Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("FirstPartUpdate", "PassCard")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "PassCard")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (updateStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("FirstPartUpdate", "PassCard")"><i class="fa fa-edit"></i>Update</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "PassCard")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString() && updateStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("FirstPartCreate", "PassCard")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("FirstPartUpdate", "PassCard")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("FirstPartCreate", "PassCard")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "PassCard")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("FirstPartCreate", "PassCard")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                    }
+                    else if (updateStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("FirstPartUpdate", "PassCard")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                    }
+                    else if (deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Delete", "PassCard")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+        }
+
+    </div>
+    <br />
+    <div class="col-md-12">
+
+
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-10">
+                    @if (TempData["PassengerMessage"] != null)
+                    {
+                        @*<div class="panel-heading text-center">*@
+                        <h4 style="color: #226699;text-align: center">@TempData["PassengerMessage"]</h4>
+                        @*</div>*@
+                    }
+                </div>
+            </div>
+            <br />
+            <div class="row">
+
+
+                <div class="col-md-2">
+                    @Html.Label("Passenger SL", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                  @Html.TextBoxFor(model => model.CARDNOP, htmlAttributes: new { id = "idCardNoP", @class = "form-control input-sm", autofocus = true })
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Passenger Name", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.PSGRNM, htmlAttributes: new { id = "idPassenger", @class = "form-control input-sm", @readonly = "readonly", tabIndex = "-1" })
+
+                </div>
+            </div>
+            <div>
+                <hr />
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-2">
+                    @Html.Label("Permanent Address", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.PERADDR, htmlAttributes: new { id = "idpermanentAdd", @class = "form-control input-sm" })
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Post Office", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.PERPO, htmlAttributes: new { id = "idperpo", @class = "form-control input-sm" })
+
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Post Code", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.PERPC, htmlAttributes: new { id = "idperpc", @class = "form-control input-sm" })
+
+                </div>
+
+                <div class="col-md-2">
+                    @Html.Label("Police Station", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.PERPS, htmlAttributes: new { id = "idperps", @class = "form-control input-sm" })
+
+                </div>
+
+            </div>
+            <br />
+
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("District", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.PERDIST, htmlAttributes: new { id = "idperdist", @class = "form-control input-sm" })
+
+                </div>
+
+            </div>
+            <hr />
+
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Present Address", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.PREADDR, htmlAttributes: new { id = "idpreadd", @class = "form-control input-sm" })
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Post Office", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.PREPO, htmlAttributes: new { id = "idprepo", @class = "form-control input-sm" })
+
+                </div>
+
+            </div>
+            <br />
+
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Post Code", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.PREPC, htmlAttributes: new { id = "idprepc", @class = "form-control input-sm" })
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Police Station", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.PREPS, htmlAttributes: new { id = "idpreps", @class = "form-control input-sm" })
+
+                </div>
+
+            </div>
+            <br />
+
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("District", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.PREDIST, htmlAttributes: new { id = "idpredist", @class = "form-control input-sm" })
+
+                </div>
+
+
+            </div>
+            <hr />
+
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Guardian Name", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.GRDNM, htmlAttributes: new { id = "idgardiannm", @class = "form-control input-sm" })
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Relation", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.GRDREL, htmlAttributes: new { id = "idgardianrel", @class = "form-control input-sm" })
+
+                </div>
+
+            </div>
+            <br />
+
+            @*<div class="row">
+
+
+                </div>
+                <hr />*@
+
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Mobile No", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.GRDMOBNO, htmlAttributes: new { id = "GRDMOBNO", @class = "form-control input-sm" })
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Email", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.GRDEMAIL, htmlAttributes: new { id = "GRDEMAIL", @class = "form-control input-sm" })
+
+                </div>
+
+            </div>
+            <br />
+
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Hajj with Husband", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.DropDownListFor(model => model.GRDWPSGR, yesorno, htmlAttributes: new { id = "GRDWPSGR", @class = "form-control input-sm" })
+
+                </div>
+
+            </div>
+            <hr />
+
+            <div class="row">
+
+                <div class="col-md-2">
+                    @Html.Label("Moallem Name", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.MOALLEMNM, htmlAttributes: new { id = "MOALLEMNM", @class = "form-control input-sm" })
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Moallem Address", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.MOALLEMADDR, htmlAttributes: new { id = "MOALLEMADDR", @class = "form-control input-sm" })
+
+                </div>
+
+
+            </div>
+            <br />
+
+            <div class="row">
+
+                <div class="col-md-2">
+                    @Html.Label("Moallem Mobile", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.MOALLEMMOBNO, htmlAttributes: new { id = "MOALLEMMOBNO", @class = "form-control input-sm" })
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Moallem Fee", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.MOALLEMFEE, htmlAttributes: new { id = "idmoallemfee", @class = "form-control input-sm" })
+
+                </div>
+
+
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Package Value", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.PKGSAMT, htmlAttributes: new { id = "idpkgsamt", @class = "form-control input-sm" })
+
+                </div>
+
+
+            </div>
+            @Html.TextBoxFor(model => model.INSLTUDE, new { id = "latlon", style = "display: none;" })
+            <input id="lat" type="hidden" />
+            <input id="lon" type="hidden" />
+
+            <br />
+            <div class="row">
+                <div class="col-md-4"></div>
+                <div class="col-md-4">
+                    <input type="submit" class="btn btn-primary btn-block" value="Update" />
+                </div>
+                <div class="col-md-4">
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+
+
+
+
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+    <script language="javascript" type="text/javascript">
+        $(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+
+            function showPosition(position) {
+                var coordinates = position.coords;
+                $("#lat").val(coordinates.latitude);
+                $("#lon").val(coordinates.longitude);
+
+                $("#latlon").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+            }
+            //function positionError(position) {
+            //    alert("!!! Error: "+position.code);
+            //}
+        });
+    </script>
+    <script language="javascript" type="text/javascript">
+        $(document).ready(function () {
+
+            $('#idCardNoP').autocomplete({
+
+                source: '@Url.Action("TagSearch", "PassCard")',
+
+                select: function (event, ui) {
+                    var changedtxt = ui.item.value;
+
+                    var txtname = document.getElementById('idPassenger');
+                    var txtid = document.getElementById('txtid');
+
+                    var txtpermanentadd = document.getElementById('idpermanentAdd');
+                    var txtperpo = document.getElementById('idperpo');
+
+                    var txtperpc = document.getElementById('idperpc');
+                    var txtperps = document.getElementById('idperps');
+
+
+
+                    var txtperdist = document.getElementById('idperdist');
+                    var txtpreadd = document.getElementById('idpreadd');
+
+                    var txtprepo = document.getElementById('idprepo');
+                    var txtprepc = document.getElementById('idprepc');
+                    var txtpreps = document.getElementById('idpreps');
+
+
+
+                    var txtpredist = document.getElementById('idpredist');
+
+
+
+
+                    var txtgardiannm = document.getElementById('idgardiannm');
+                    var txtgardianrel = document.getElementById('idgardianrel');
+                    var txtGRDMOBNO = document.getElementById('GRDMOBNO');
+                    var txtGRDEMAIL = document.getElementById('GRDEMAIL');
+                    var txtGRDWPSGR = document.getElementById('GRDWPSGR');
+
+
+
+                    var txtpkgsamt = document.getElementById('idpkgsamt');
+
+
+                    var txtMOALLEMNM = document.getElementById('MOALLEMNM');
+                    var txtMOALLEMADDR = document.getElementById('MOALLEMADDR');
+                    var txtmoalfee = document.getElementById('idmoallemfee');
+                    var txtMOALLEMMOBNO = document.getElementById('MOALLEMMOBNO');
+
+
+                    $('#idPassenger').val("");
+
+
+                    $.getJSON(
+                        "/PassCard/CardNo_Changed", { "Changedtxt": changedtxt },
+                        function (myData) {
+                            txtid.value = myData.id;
+                            txtname.value = myData.name;
+                            txtpermanentadd.value = myData.PerAdd;
+
+                            txtperpo.value = myData.Perpo;
+                            txtperpc.value = myData.Perpc;
+                            txtperps.value = myData.Perps;
+                            txtperdist.value = myData.Perdist;
+
+                            txtpreadd.value = myData.Preadd;
+                            txtprepo.value = myData.Prepo;
+                            txtprepc.value = myData.Prepc;
+                            txtpreps.value = myData.Preps;
+
+                            txtpredist.value = myData.Predist;
+
+                            txtgardiannm.value = myData.Gardian;
+                            txtgardianrel.value = myData.Gardrel;
+                            txtGRDMOBNO.value = myData.Gardmob;
+                            txtGRDEMAIL.value = myData.Gardemail;
+                            txtGRDWPSGR.value = myData.Gardpsgr;
+
+
+
+                            txtpkgsamt.value = myData.PKGamt;
+
+                            txtmoalfee.value = myData.MoBlFee;
+                            txtMOALLEMNM.value = myData.mollname;
+                            txtMOALLEMADDR.value = myData.molladdress;
+
+                            txtMOALLEMMOBNO.value = myData.mollmob;
+
+                            document.getElementById("idpermanentAdd").focus();
+                        });
+                },
+                change: $('#idCardNoP').keyup(_.debounce(txtOneChanged, 500))
+
+
+
+
+
+
+            });
+
+
+
+        });
+
+
+        function txtOneChanged() {
+
+            var changedText = $("#idCardNoP").val();
+
+
+            var txtBox = document.getElementById('idCardNoP');
+
+
+            if (changedText != "") {
+                $.getJSON(
+              '/PassCard/keyword', { "ChangedText": changedText },
+               function (result) {
+                   txtBox.value = result.Cardnop;
+
+
+
+
+
+
+
+                   document.getElementById("idCardNoP").focus();
+
+               });
+            }
+
+
+
+        }
+
+    </script>
+
+
+
+}
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+@*<link href="~/Content/jquery.jqGrid/ui.jqgrid.css" rel="stylesheet" />*@
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+<script src="~/Scripts/Underscore.js"></script>
+

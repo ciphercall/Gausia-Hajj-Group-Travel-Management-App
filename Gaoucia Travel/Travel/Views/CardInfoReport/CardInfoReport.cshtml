@@ -1,0 +1,562 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using Travel.DataAccess
+@using Travel.Models
+@model Travel.Models.PageModel
+
+@{
+    Layout = null;
+
+    var LoggedCompId = Model.passenger.COMPID;
+
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+
+    string companyName = "", address = "", contactNo = "";
+    TravelDbContext db = new TravelDbContext();
+    var SelectCompanyName = from n in db.AslCompanyDbSet
+
+                            where n.COMPID == compid
+                            select new { n.COMPNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectCompanyName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+
+    var cardno = Model.passenger.CARDNO;
+    var cardyy = Model.passenger.CARDYY;
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+    //decimal sumcredit = 0, sumdebit = 0, result = 0, debitamount = 0, creditamount = 0, totaldebit = 0, totalcredit = 0;
+    //string tdebit = "", tcredit = "";
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+</head>
+<body>
+
+    <table id="mainTable" border="0" width="100%">
+        <thead>
+            <tr>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="10%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+
+            </tr>
+            <tr style="background-color: #00689b">
+                <td colspan="12">
+                    <h3 style="color: white;padding:4px">@compNm</h3>
+                    <p style="color:white;padding-left:4px">@Address<span>  @contactno</span></p>
+                </td>
+
+                <td colspan="6" style="color: white;padding:8px" align="right">
+                    Powered By<br />Alchemy Software
+                </td>
+
+            </tr>
+            <tr>
+                <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Card Information</td>
+                <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+            </tr>
+            <tr style="outline: thin solid">
+
+
+                <td colspan="14" style="font-weight: bold;padding:4px">
+                    Card No : <span style="font-weight:bold">@cardno</span>
+                    <span>Card Year : <span style="font-weight:bold">@cardyy</span></span>
+                </td>
+            </tr>
+
+        </thead>
+        <tbody>
+            @{
+                var passengerdata = (from n in db.passengerDbSet where n.COMPID == compid && n.CARDNO == cardno select n).ToList();
+
+                var accountname = (from n in db.GlAcchartDbSet where n.COMPID == compid select new { n.ACCOUNTNM, n.ACCOUNTCD }).ToList();
+                var costhead = (from n in db.GLCostPMSTDbSet where n.COMPID == compid select new { n.COSTCNM, n.COSTCID }).ToList();
+                string cardid = Convert.ToString(compid) + "10202" + Convert.ToString(cardno);
+                Int64 CardID = Convert.ToInt64(cardid);
+                var flightdata = (from n in db.flightDbSet where n.COMPID == compid && n.CARDID == CardID select n).ToList();
+                var rpdrcrdata = (from n in db.RPDRCRDbSet where n.COMPID == compid && n.CARDID == CardID && n.TRANSFOR == "RECEIVABLE" select n).ToList();
+                var ticketissuer = (from n in db.RPDRCRDbSet where n.COMPID == compid && n.CARDID == CardID && n.TRANSFOR == "PAYABLE" select n).ToList();
+                Int64 i = 0;
+
+            }
+            <tr style="background-color: #00689b; outline: thin solid">
+                <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Card No</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Card Date</td>
+                <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Card Type</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Passenger Name</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Carrier Name</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Agent name</td>
+                <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Route</td>
+
+
+            </tr>
+            @foreach (var item in passengerdata)
+            {
+
+                //if (i == 0)
+                //{
+                <tr style="outline: thin solid">
+
+
+                    <td colspan="2" style="padding-left: 4px">@item.CARDNO</td>
+
+
+                    @{
+                string d2 = Convert.ToString(item.CARDDT);
+                DateTime fdate2 = DateTime.Parse(d2);
+                string ffdt2 = fdate2.ToString("dd-MMM-yyyy");
+
+                    }
+                    <td colspan="3">@ffdt2</td>
+
+                    @foreach (var x in costhead)
+                    {
+                        if (Convert.ToString(x.COSTCID) == item.CARDCID)
+                        {
+                            <td colspan="2">@x.COSTCNM</td>
+                            break;
+                        }
+
+                    }
+
+
+                    <td colspan="3">@item.PSGRNM</td>
+                    <td colspan="3">@item.CARRIERID</td>
+
+                    @foreach (var x in accountname)
+                    {
+                        if (x.ACCOUNTCD == item.AGENTID)
+                        {
+                            <td colspan="3">@x.ACCOUNTNM</td>
+                        }
+
+                    }
+                    <td colspan="2">@item.ROUTE</td>
+                </tr>
+                //i = 1;
+                @*}*@
+
+
+
+
+
+
+            }
+            <tr style="background-color: #00689b; outline: thin solid">
+                <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Passport No</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Issue Date</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Place</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Expire Date</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Father Name</td>
+
+                <td colspan="4" style="color: white; padding: 4px; font-size: small" align="center">Nationality</td>
+
+
+            </tr>
+            @foreach (var item in passengerdata)
+            {
+
+                //if (i == 0)
+                //{
+                <tr style="outline: thin solid">
+
+
+                    <td colspan="2" style="padding-left: 4px">@item.PASSPORTNO</td>
+
+
+                    @{
+                string ffdt2 = "";
+                if (item.ISSUEDT != null)
+                {
+                    string d2 = Convert.ToString(item.ISSUEDT);
+                    DateTime fdate2 = DateTime.Parse(d2);
+                    ffdt2 = fdate2.ToString("dd-MMM-yyyy");
+                }
+
+                string ffdt3 = "";
+                if (item.EXPIREDT != null)
+                {
+                    string d3 = Convert.ToString(item.EXPIREDT);
+                    DateTime fdate3 = DateTime.Parse(d3);
+                    ffdt3 = fdate3.ToString("dd-MMM-yyyy");
+                }
+
+
+                    }
+                    @if (item.ISSUEDT != null)
+                    {
+                        <td colspan="3">@ffdt2</td>
+                    }
+                    else
+                    {
+                        <td colspan="3">@item.ISSUEDT</td>
+                    }
+
+
+
+
+                    <td colspan="3">@item.ISSUEPLACE</td>
+
+
+                    @if (item.EXPIREDT != null)
+                    {
+                        <td colspan="3">@ffdt3</td>
+                    }
+                    else
+                    {
+                        <td colspan="3">@item.EXPIREDT</td>
+                    }
+                    <td colspan="3">@item.FATHERNM</td>
+
+
+
+
+                    <td colspan="4">@item.NATIONALITY</td>
+                </tr>
+                //i = 1;
+                @*}*@
+
+
+
+
+
+
+            }
+            <tr style="background-color: #00689b; outline: thin solid">
+                <td colspan="5" style="color: white; padding: 4px; font-size: small" align="center">Present Address</td>
+                <td colspan="4" style="color: white; padding: 4px; font-size: small" align="center">Date Of Birth</td>
+                <td colspan="5" style="color: white; padding: 4px; font-size: small" align="center">Birth Place</td>
+                <td colspan="4" style="color: white; padding: 4px; font-size: small" align="center">Profession</td>
+
+
+
+            </tr>
+            @foreach (var item in passengerdata)
+            {
+
+                //if (i == 0)
+                //{
+                <tr style="outline: thin solid">
+
+
+
+
+
+                    @{
+                string ffdt2 = "";
+                if (item.DOB != null)
+                {
+                    string d2 = Convert.ToString(item.DOB);
+                    DateTime fdate2 = DateTime.Parse(d2);
+                    ffdt2 = fdate2.ToString("dd-MMM-yyyy");
+                }
+
+                string ffdt3 = "";
+                if (item.EXPIREDT != null)
+                {
+                    string d3 = Convert.ToString(item.EXPIREDT);
+                    DateTime fdate3 = DateTime.Parse(d3);
+                    ffdt3 = fdate3.ToString("dd-MMM-yyyy");
+                }
+
+
+                    }
+                    <td colspan="5">@item.PREADDR</td>
+                    @if (item.DOB != null)
+                    {
+                        <td colspan="4">@ffdt2</td>
+                    }
+                    else
+                    {
+                        <td colspan="4">@item.DOB</td>
+                    }
+
+
+
+
+                    <td colspan="5">@item.BIRTHPLACE</td>
+
+
+
+                    <td colspan="4">@item.PROFESSION</td>
+
+
+                </tr>
+                //i = 1;
+                @*}*@
+
+
+
+
+
+
+            }
+
+            <tr style="background-color: #00689b; outline: thin solid">
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Carrier Name</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Flight No</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Class</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Date</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Departure</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Arrival</td>
+
+
+
+            </tr>
+            @foreach (var item in flightdata)
+            {
+                <tr style="outline: thin solid">
+                    <td colspan="3">@item.CARRIERSID</td>
+                    <td colspan="3">@item.FLIGHTNO</td>
+                    <td colspan="3">@item.CLASS</td>
+                    @{string ffdt3 = "";
+                    if (item.FLIGHTDT != null)
+                    {
+                        string d3 = Convert.ToString(item.FLIGHTDT);
+                        DateTime fdate3 = DateTime.Parse(d3);
+                        ffdt3 = fdate3.ToString("dd-MMM-yyyy");
+                    }
+
+                    }
+                    <td colspan="3">@ffdt3</td>
+                    <td colspan="3">@item.TIMEDEP</td>
+                    <td colspan="3">@item.TIMEARR</td>
+
+                </tr>
+
+            }
+            <tr style="background-color: #00689b; outline: thin solid">
+                <td colspan="6" style="color: white; padding: 4px; font-size: small" align="center">Status</td>
+                <td colspan="6" style="color: white; padding: 4px; font-size: small" align="center">PNR No</td>
+                <td colspan="6" style="color: white; padding: 4px; font-size: small" align="center">Confirmed BY</td>
+
+
+
+
+            </tr>
+            @foreach (var item in flightdata)
+            {
+                <tr style="outline: thin solid">
+                    <td colspan="6">@item.STATUS</td>
+                    <td colspan="6">@item.PNRNO</td>
+                    <td colspan="6">@item.CONFIRMBY</td>
+
+                </tr>
+
+            }
+            <tr style="background-color: #00689b; outline: thin solid">
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Date</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Ticket No</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Ticket Date</td>
+                <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Amount</td>
+                <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Cash</td>
+                <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Credit</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Ticket Issuer</td>
+
+
+            </tr>
+            @{
+                int flag = 0;
+            }
+            @foreach (var item in rpdrcrdata)
+            {
+                flag = 0;
+                <tr style="outline: thin solid">
+                    @{string ffdt3 = "",tickddt="";
+                    if (item.TRANSDT != null)
+                    {
+                        string d3 = Convert.ToString(item.TRANSDT);
+                        DateTime fdate3 = DateTime.Parse(d3);
+                        ffdt3 = fdate3.ToString("dd-MMM-yyyy");
+                    }
+                    if (item.TICKETDT != null)
+                    {
+                        string d3 = Convert.ToString(item.TICKETDT);
+                        DateTime fdate3 = DateTime.Parse(d3);
+                        tickddt = fdate3.ToString("dd-MMM-yyyy");
+                    }
+
+                    }
+                    <td colspan="3">@ffdt3</td>
+                    <td colspan="3">@item.TICKETNO</td>
+
+                        <td colspan="3">@tickddt</td>
+                        <td colspan="2" align="right">@item.AMOUNT</td>
+                        <td colspan="2" align="right">@item.AMTCASH</td>
+                        <td colspan="2" align="right">@item.AMTCREDIT</td>
+
+                   
+                   
+                    @foreach (var x in ticketissuer)
+                    {
+                        if (x.CARDID == item.CARDID && x.TICKETNO==item.TICKETNO)
+                        {
+                            foreach (var l in accountname)
+                            {
+                                if (l.ACCOUNTCD == x.ACCOUNTCD)
+                                {
+                                    <td colspan="3" style="font-size: smaller">@l.ACCOUNTNM</td>
+                                    flag = 1;
+                                    break;
+                                }
+                            }
+                            if (flag == 1)
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            flag = 0;
+                        }
+
+
+                    }
+                    @if (flag == 0)
+                    {
+                        <td colspan="3" style="font-size: smaller">No Ticket Issuer</td>
+                    }
+                 
+
+
+                </tr>
+
+            }
+            @{
+                System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["TravelDbContext"].ToString());
+
+
+                string query = string.Format("SELECT TRANSTP, TRANSDT, TRANSNO, ACCOUNTNM, SUM(RCVAMT) RCVAMT, SUM(PAYAMT) PAYAMT FROM( " +
+                                                 "SELECT TRANSTP, TRANSDT, TRANSNO, ACCOUNTNM, DEBITAMT AS RCVAMT, 0 PAYAMT FROM GL_MASTER " +
+                                                 "INNER JOIN GL_ACCHART ON GL_ACCHART.ACCOUNTCD = GL_MASTER.DEBITCD " +
+                                                 "WHERE GL_MASTER.COMPID='{0}' AND CARDID = '{1}' AND DEBITAMT <> 0 AND TRANSTP = 'MREC' " +
+
+                                                 "UNION " +
+                                                 "SELECT TRANSTP, TRANSDT, TRANSNO, ACCOUNTNM, 0 RCVAMT, CREDITAMT AS PAYAMT FROM GL_MASTER " +
+                                                 "INNER JOIN GL_ACCHART ON GL_ACCHART.ACCOUNTCD = GL_MASTER.CREDITCD " +
+                                                 "WHERE GL_MASTER.COMPID='{0}' AND CARDID = '{1}' AND CREDITAMT <> 0 AND TRANSTP = 'MPAY' " +
+                                                 ") A GROUP BY TRANSTP, TRANSDT, TRANSNO, ACCOUNTNM " +
+
+                                                 "ORDER BY TRANSDT, TRANSTP, TRANSNO", compid, CardID);
+
+
+                System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn);
+                conn.Open();
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                DataTable ds = new DataTable();
+                da.Fill(ds);
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Trans Type</td>
+                    <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Date</td>
+                    <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Memo No</td>
+                    <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Particulars</td>
+                    <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Receive</td>
+                  
+                    <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Refund</td>
+
+
+                </tr>
+                string Transtp = "", transdt = "", transno = "", Accountname = "";
+                Decimal receiveamt = 0, paymentamt = 0;
+               
+               
+                foreach (DataRow row in ds.Rows)
+                {
+                   
+                    Transtp = row["TRANSTP"].ToString();
+                    transdt = row["TRANSDT"].ToString();
+                    
+                        transno = row["TRANSNO"].ToString();
+                        Accountname = row["ACCOUNTNM"].ToString();
+
+                       
+
+
+                        receiveamt = Convert.ToDecimal(row["RCVAMT"]);
+                        paymentamt = Convert.ToDecimal(row["PAYAMT"]);
+                       
+
+
+                        //Balance = PurchaseAmount - Saleamount;
+
+
+
+                        <tr style="outline: thin solid">
+                            <td align="center" colspan="3">
+                                @Transtp
+                            </td>
+
+                            <td align="center" colspan="3">
+                                @transdt
+                            </td>
+                            <td align="center" colspan="3">
+                                @transno
+
+                            </td>
+                            <td align="center" colspan="3">
+                                @Accountname
+                            </td>
+
+
+                            <td align="right" colspan="3">
+                                @receiveamt
+                            </td>
+                            <td align="right" colspan="3">
+                                @paymentamt
+                            </td>
+
+                            
+                        </tr>
+                     
+
+                  
+
+
+
+
+
+
+
+                }
+            }
+        </tbody>
+    </table>
+
+
+
+</body>
+</html>

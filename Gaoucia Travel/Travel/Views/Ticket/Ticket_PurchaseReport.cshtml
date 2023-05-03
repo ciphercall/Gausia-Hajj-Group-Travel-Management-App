@@ -1,0 +1,220 @@
+﻿@using Travel.DataAccess
+@using Travel.Models
+@model Travel.Models.PageModel
+
+
+
+@{
+    Layout = null;
+
+    var LoggedCompId = Model.RPDRCR.COMPID;
+
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+
+    string companyName = "", address = "", contactNo = "";
+    TravelDbContext db = new TravelDbContext();
+    var SelectCompanyName = from n in db.AslCompanyDbSet
+
+                            where n.COMPID == compid
+                            select new { n.COMPNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectCompanyName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    var costPname = Model.AGlCostPool.COSTPNM;
+    var queryforcostpid = (from n in db.GlCostPoolDbSet where n.COMPID == compid && n.COSTPNM == costPname select new {n.COSTPID});
+    Int64 costpid = 0;
+    foreach (var itemname in queryforcostpid)
+    {
+        costpid = Convert.ToInt64(itemname.COSTPID);
+        break;
+    }
+   
+    var fromdate = Model.FromDate;
+    var todate = Model.ToDate;
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+    decimal totalincome = 0, totalexpense = 0, result = 0, netSum = 0;
+    string accountname = "";
+    Int64 tt = 0;
+
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+</head>
+
+<body>
+    <table id="mainTable" border="0" width="100%">
+        <thead>
+            <tr>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="10%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+
+            </tr>
+
+            <tr style="background-color: #00689b">
+                <td colspan="12">
+                    <h3 style="color: white;padding:4px">@compNm</h3>
+                    <p style="color:white;padding-left:4px">@Address<span>  @contactno</span></p>
+                </td>
+
+                <td colspan="6" style="color: white;padding:8px" align="right">
+                    Powered By<br />Alchemy Software
+                </td>
+
+            </tr>
+            <tr>
+                <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Ticket Purchase Statement </td>
+                <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+            </tr>
+            <tr>
+                <td colspan="18" align="left" style="padding: 4px; font-weight: bold">@costPname </td>
+
+            </tr>
+            <tr style="outline: thin solid">
+
+                @{
+                    string d = Convert.ToString(fromdate);
+                    DateTime fdate = DateTime.Parse(d);
+                    string ffdt = fdate.ToString("dd-MMM-yyyy");
+
+
+                    string d2 = Convert.ToString(todate);
+                    DateTime fdate2 = DateTime.Parse(d2);
+                    string ffdt2 = fdate2.ToString("dd-MMM-yyyy");
+
+                }
+
+
+                <td colspan="12" style="font-weight: bold;padding:4px">
+                    From : <span style="font-weight:bold">@ffdt</span> <span>To :</span>
+                    <span style="font-weight:bold">@ffdt2</span>
+                </td>
+
+
+
+
+            </tr>
+            <tr style="background-color: #00689b; outline: thin solid">
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Date</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Card No</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Ticket No</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Passenger Name</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Root</td>
+                <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Amount</td>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+               
+                var getRpdrcrdata = (from n in db.RPDRCRDbSet
+                    where n.COMPID == compid && n.TRANSDT >= fromdate && n.TRANSDT <= todate && n.CARDPID == costpid && n.TRANSFOR=="PAYABLE"
+                    select n).ToList();
+
+                var getpassengerdata = (from n in db.passengerDbSet
+                    where n.COMPID == compid
+                    select n).ToList();
+                string incomeSearch = "";
+
+            }
+           
+            @foreach (var item in getRpdrcrdata)
+            {
+                string passengername = "", root = "";
+
+                string d3 = Convert.ToString(item.TRANSDT);
+                DateTime fdate3 = DateTime.Parse(d3);
+                string transdate = fdate3.ToString("dd-MMM-yyyy");
+                
+                    <tr style="outline:thin solid">
+                        
+                        <td colspan="3" style="padding-left: 60px">@transdate</td>
+                        @foreach (var x in getpassengerdata)
+                        {
+                            if (x.CARDID == Convert.ToString(item.CARDID))
+                            {
+                                <td colspan="3" style="padding-left: 60px">@x.CARDNO</td>
+                                passengername = x.PSGRNM;
+                                root = x.ROUTE;
+                                break;
+                            }
+
+                        }
+                        
+                        <td colspan="3" style="padding-left: 60px">@item.TICKETNO</td>
+                        <td colspan="3" style="padding-left: 60px">@passengername</td>
+                        <td colspan="3" style="padding-left: 60px">@root</td>
+
+                        @{
+                        string convertamount2 = Convert.ToString(item.AMOUNT);
+                        string itemamount = CommainAmount.AmountwithComma(convertamount2);
+                        }
+                        <td colspan="6" align="right">@itemamount</td>
+
+                    </tr>
+                        totalincome = Convert.ToDecimal(totalincome + item.AMOUNT);
+              
+
+            }
+            @{
+                string convertamount = Convert.ToString(totalincome);
+                string tIncome = CommainAmount.AmountwithComma(convertamount);
+            }
+            <tr style=" outline: thin solid">
+                <td colspan="15" style="font-weight: bold" align="right">Total : </td>
+                @if (tIncome == "")
+                {
+                    <td colspan="3" style="font-weight: bold" align="right">0.00</td>
+                }
+                else
+                {
+                    <td colspan="3" style="font-weight: bold" align="right">@tIncome</td>
+                }
+
+
+            </tr>
+           
+
+
+
+
+         
+           
+        </tbody>
+    </table>
+</body>
+</html>
+
+

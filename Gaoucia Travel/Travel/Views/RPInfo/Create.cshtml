@@ -1,0 +1,782 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using Travel.Models
+@model Travel.Models.PageModel
+@{
+    ViewBag.Title = "Create";
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    Int64 compid = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+
+
+    TravelDbContext db = new TravelDbContext();
+
+
+    List<SelectListItem> transfor=new List<SelectListItem>();
+    transfor.Add(new SelectListItem { Text = "RECEIVABLE", Value = "RECEIVABLE" });
+
+    transfor.Add(new SelectListItem { Text = "PAYABLE", Value = "PAYABLE" });
+
+
+    List<SelectListItem>listcostcnm=new List<SelectListItem>();
+    var cc = (from n in db.GLCostPMSTDbSet where n.COMPID == compid select new {n.COSTCNM, n.COSTCID}).ToList();
+    foreach (var x in cc)
+    {
+        listcostcnm.Add(new SelectListItem{Text=x.COSTCNM,Value=Convert.ToString(x.COSTCID)});
+    }
+
+    List<SelectListItem> listp=new List<SelectListItem>();
+    var costpname = (from n in db.GlCostPoolDbSet where n.COMPID == compid select new {n.COSTCID, n.COSTPID, n.COSTPNM}).ToList();
+    foreach (var x in costpname)
+    {
+        if (x.COSTCID.ToString().Substring(5, 1) == "1")
+        {
+            listp.Add(new SelectListItem{Text=x.COSTPNM,Value=Convert.ToString(x.COSTPID)});
+        }
+    }
+
+    List<SelectListItem> ticket = new List<SelectListItem>();
+    var find_ticket=(from n in db.RPDRCRDbSet where n.COMPID==compid && n.TRANSFOR=="PAYABLE" select n).Distinct().ToList();
+    foreach (var TravelRpdrcr in find_ticket)
+    {
+        if (TravelRpdrcr.TICKETNO != null)
+        {
+            ticket.Add(new SelectListItem { Text = TravelRpdrcr.TICKETNO, Value = TravelRpdrcr.TICKETNO });
+        }
+       
+    }
+
+}
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.RPDRCR.COMPID, new {id="txtcompid", @Value = compid })
+
+
+    <div id="contentHeaderBox">
+
+
+
+        @if (TempData["RPMessage"] != null)
+        {
+
+            <h1 style="padding-left:16px">
+                Receivable/Payable Input&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                @TempData["RPMessage"]
+            </h1>
+
+        }
+        else
+        {
+            <h1 style="padding-left:16px">
+                Receivable/Payable Input
+            </h1>
+        }
+
+
+
+
+
+
+        @if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A")
+        {
+            var createStatus = "";
+            var updateStatus = "";
+            var deleteStatus = "";
+            var status = "";
+            var loggedUserID = HttpContext.Current.Session["loggedUserID"].ToString();
+            System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["TravelDbContext"].ToString());
+
+            string query1 = string.Format("SELECT STATUS, INSERTR, UPDATER, DELETER FROM ASL_ROLE WHERE  CONTROLLERNAME='RPInfo' AND COMPID='{0}' AND USERID = '{1}'", compid, loggedUserID);
+
+            System.Data.SqlClient.SqlCommand cmd1 = new System.Data.SqlClient.SqlCommand(query1, conn);
+            conn.Open();
+
+            SqlDataAdapter da1 = new SqlDataAdapter(cmd1);
+            DataTable ds1 = new DataTable();
+            da1.Fill(ds1);
+
+            foreach (DataRow row in ds1.Rows)
+            {
+                status = row["STATUS"].ToString();
+                createStatus = row["INSERTR"].ToString();
+                updateStatus = row["UPDATER"].ToString();
+                deleteStatus = row["DELETER"].ToString();
+            }
+            conn.Close();
+
+            <div class="btn-group pull-right" id="editOption">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                    <i class="fa fa-cog"></i>
+                </button>
+                <ul class="dropdown-menu pull-right" style="" role="menu">
+                    @if (createStatus == 'A'.ToString() && updateStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "RPInfo")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Update", "RPInfo")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "RPInfo")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (updateStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Update", "RPInfo")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "RPInfo")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString() && updateStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "RPInfo")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Update", "RPInfo")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "RPInfo")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "RPInfo")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "RPInfo")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                    }
+                    else if (updateStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Update", "RPInfo")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                    }
+                    else if (deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Delete", "RPInfo")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+        }
+
+    </div>
+    <br />
+    <div class="col-md-12">
+
+        <div class="form-group">
+
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Transaction Date", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.RPDRCR.TRANSDT, htmlAttributes: new { id = "idTransDT", @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.RPDRCR.TRANSDT, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Month", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.RPDRCR.TRANSMY, htmlAttributes: new { id = "idTransMonth", @class = "form-control",@readonly="readonly",tabIndex="-1"})
+                    @Html.ValidationMessageFor(model => model.RPDRCR.TRANSMY, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Serial No", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.RPDRCR.TRANSNO, htmlAttributes: new { id = "idTransNO", @class = "form-control", @readonly = "readonly", tabIndex = "-1" })
+                    @Html.ValidationMessageFor(model => model.RPDRCR.TRANSNO, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Card Type", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.DropDownListFor(model => model.RPDRCR.CARDCID,listcostcnm, htmlAttributes: new { id = "idCardCID", @class = "form-control" })
+
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Effect Head", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.DropDownListFor(model => model.RPDRCR.CARDPID, listp, htmlAttributes: new { id = "idCardpid", @class = "form-control" })
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("R/P Type", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.DropDownListFor(model => model.RPDRCR.TRANSFOR, transfor, htmlAttributes: new { id = "idTransFor", @class = "form-control" })
+
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("Card No", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.passenger.CARDNO, htmlAttributes: new { id = "idCardNo", @class = "form-control",@required="required" })
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Passenger Name", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.passenger.PSGRNM, htmlAttributes: new { id = "idPassenger", @class = "form-control", @readonly = "readonly", tabIndex = "-1" })
+
+                </div>
+               
+
+            </div>
+            <br />
+
+            <div class="row">
+                
+                
+                <div class="col-md-2">
+                    @Html.LabelFor(model=>model.AGL_acchart.ACCOUNTNM, htmlAttributes: new {id="lableaccountnm", @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.DropDownListFor(model => model.RPDRCR.ACCOUNTCD, new SelectList(string.Empty, "Value", "Text"), "--Select--", htmlAttributes: new { id = "idAccountcd", @class = "form-control" })
+
+                </div>
+
+            </div>
+            <br />
+            
+            <div class="row" id="receivablediv">
+
+                <div class="col-md-2">
+                    @Html.Label("Ticket No", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.DropDownListFor(model => model.RPDRCR.TICKETNO, new SelectList(string.Empty, "Value", "Text"), "--Select--", htmlAttributes: new { id = "idTickNo2", @class = "form-control" })
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Ticket Date", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.RPDRCR.TICKETDT, htmlAttributes: new { id = "idTicDT2", @class = "form-control" })
+
+                </div>
+            </div>
+
+            <br />
+            <div class="row" id="payablediv">
+
+                <div class="col-md-2">
+                    @Html.Label("Ticket No", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.RPDRCR.USERPC, htmlAttributes: new { id = "idTickNo", @class = "form-control" }) @*model.RPDRCR.USERPC holds for ticketno*@
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Ticket Date", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.RPDRCR.INSTIME, htmlAttributes: new { id = "idTicDT", @class = "form-control" })@*model.RPDRCR.INSTIME holds for ticketdate*@
+
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                
+                <div class="col-md-2">
+                    @Html.Label("Amount", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.RPDRCR.AMOUNT, htmlAttributes: new { id = "idAmount", @class = "form-control" })
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Cash Amount", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.RPDRCR.AMTCASH, htmlAttributes: new { id = "idAmtcash", @class = "form-control" })
+
+                </div>
+            </div>
+            <br />
+            <div class="row">
+               
+                <div class="col-md-2">
+                    @Html.Label("Credit Amount", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.RPDRCR.AMTCREDIT, htmlAttributes: new { id = "idAmtcredit", @class = "form-control", @readonly = "readonly", tabIndex = "-1" })
+
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Remarks", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.RPDRCR.REMARKS, htmlAttributes: new { id = "idRemarks", @class = "form-control" })
+
+                </div>
+
+            </div>
+            
+
+            @Html.TextBoxFor(model => model.RPDRCR.INSLTUDE, new { id = "latlon", style = "display: none;" })
+            <input id="lat" type="hidden" />
+            <input id="lon" type="hidden" />
+
+            <br />
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-3">
+                    <input type="submit" class="btn btn-primary btn-block" value="Create" name="command" />
+                </div>
+                <div class="col-md-3">
+                        <input type="submit" class="btn btn-primary btn-block" id="createp" value="Create & Print" name="command" formtarget="_blank" />
+
+                    </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+    <script language="javascript" type="text/javascript">
+        $(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+
+            function showPosition(position) {
+                var coordinates = position.coords;
+                $("#lat").val(coordinates.latitude);
+                $("#lon").val(coordinates.longitude);
+
+                $("#latlon").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+            }
+            //function positionError(position) {
+            //    alert("!!! Error: "+position.code);
+            //}
+        });
+    </script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            
+            $("#payablediv").hide();
+            $("#receivablediv").show();
+        $(function () {
+            $("#idTransDT").datepicker({ dateFormat: 'dd-M-yy', changeYear: true });
+        });
+      
+        $("#idTicDT").datepicker({ dateFormat: 'dd-M-yy', changeYear: true });
+        $("#idTicDT2").datepicker({ dateFormat: 'dd-M-yy', changeYear: true });
+       
+        $('#lableaccountnm').text('Receivable Head');
+
+
+        $('#createp').click(function () {
+            setTimeout(function () { window.location.reload(); }, 100);
+        });
+
+        $('#idTransDT').change(function () {
+
+            var changedtxt = $('#idTransDT').val();
+            //var changedtxt2 = $('#txtTransTp').val();
+
+            var txttransYear = document.getElementById('idTransMonth');
+            var txttransNo = document.getElementById('idTransNO');
+
+            $("#idTransMonth").val(" ");
+
+            $("#idTransNO").val(" ");
+
+            $.getJSON(
+                "/RPInfo/DateChanged_getMonth", { "Changedtxt": changedtxt },
+                function (myData) {
+                    txttransYear.value = myData.month;
+                    txttransNo.value = myData.TransNo;
+
+
+
+
+                    document.getElementById("idCardCID").focus();
+                });
+
+        });
+        $('#idAmtcash').change(function () {
+            document.getElementById('idAmtcredit').value = (document.getElementById('idAmount').value - (document.getElementById('idAmtcash').value));
+
+
+        });
+        $('#idAmount').change(function () {
+            document.getElementById('idAmtcash').value = (document.getElementById('idAmount').value);
+
+
+        });
+
+
+        $('#idCardCID').change(function () {
+            var changedtxt = $('#idCardCID').val();
+            $.ajax
+               ({
+                   url: '@Url.Action("Cardpidload", "RPInfo")',
+                   type: 'post',
+                   dataType: "json",
+                   data: { type: changedtxt },
+                   success: function (data) {
+                       $("#idCardpid").empty();
+
+                       $("#idCardpid").append('<option value="'
+                           + '">'
+                           + "--Select--" + '</option>');
+
+
+
+                       $.each(data, function (i, memo) {
+
+                           $("#idCardpid").append('<option value="'
+                               + memo.Value + '">'
+                               + memo.Text + '</option>');
+
+
+
+
+                       });
+
+                   }
+               });
+
+        });
+
+            $('#idTickNo2').change(function () {
+                var ticket = $("#idTickNo2").val();
+                $.ajax({
+                    url: '@Url.Action("TicketDate", "RPInfo")',
+                    type: 'GET',
+                    cache: false,
+                    data: { query: ticket },
+                    dataType: 'json',
+                    success: function (data) {
+                        //response($.map(data, function (item) {
+                        //    return {
+                        //        label: item.CARDNO,
+                        //        value: item.CARDNO,
+                        //        name: item.PSGRNM
+
+
+                        //    };
+                        //}));
+                        $("#idTicDT2").val(data);
+                        $('#idTicDT2').attr('readonly', true);
+                       
+                    }
+                });
+            });
+
+        
+            $('#idCardNo').autocomplete({
+                source: function (request, response) {
+                    //var compid = $('#txtcompid').val();
+                    //var year = $('#PATIENTYY').val();
+                    $.ajax({
+                        url: '@Url.Action("TagSearch3", "RPInfo")',
+                        type: 'GET',
+                        cache: false,
+                        data: { query: request.term },
+                        dataType: 'json',
+                        success: function (data) {
+                            response($.map(data, function (item) {
+                                return {
+                                    label: item.CARDNO,
+                                    value: item.CARDNO,
+                                    name: item.PSGRNM
+
+
+                                };
+                            }));
+                        }
+                    });
+                },
+                select: function (event, ui) {
+                    $('#idCardNo').val(ui.item.label);
+                    $('#idPassenger').val(ui.item.name);
+
+                    txtOneChanged3();
+
+                 
+
+
+                },
+                change: $('#idCardNo').keyup(_.debounce(txtOneChanged3, 100))
+            });
+        $('#idAccountcd').autocomplete({
+
+            source: '@Url.Action("TagSearch4", "RPInfo")',
+
+
+                change: $('#idAccountcd').keyup(_.debounce(txtOneChanged4, 1000))
+
+            });
+
+
+            $('#idTransFor').change(function () {
+
+                var changedtxt = $('#idTransFor').val();
+
+
+
+                if (changedtxt == "RECEIVABLE") {
+                    $('#lableaccountnm').text('Receivable Head');
+                    @*var html = "<select id='idTickNo' class='form-control'>" + " </select>";
+
+                var Compid = $("#txtcompid").val();
+                $("#idTickNo").replaceWith(html);
+                $.ajax
+                   ({
+                       url: '@Url.Action("TicketNoLoad", "RPInfo")',
+                       type: 'post',
+                       dataType: "json",
+                       data: { COMPID: Compid },
+                       success: function (data) {
+                           $("#idTickNo").empty();
+                           $("#idTickNo").append('<option value="'
+                               + "select" + '">'
+                               + "select" + '</option>');
+
+
+                           $.each(data, function (i, memo) {
+
+                               $("#idTickNo").append('<option value="'
+                                   + memo.Value + '">'
+                                   + memo.Text + '</option>');
+
+                           });
+                         
+
+                       }
+                   });*@
+                    $("#payablediv").hide();
+                    $("#receivablediv").show();
+                   
+
+            }
+            else if (changedtxt == "PAYABLE") {
+                $('#lableaccountnm').text('Payable Head');
+               
+                //var html = "<input id='idTickNo' type='textbox' class='form-control'" +" />";
+               
+                $("#receivablediv").hide();
+                $("#payablediv").show();
+                //$("#idTickNo").replaceWith(html);
+
+            }
+        });
+
+    });
+
+    function txtOneChanged3() {
+
+        var changedText = $("#idCardNo").val();
+
+
+        var txtBox = document.getElementById('idCardNo');
+        var txtname = document.getElementById('idPassenger');
+
+        if (changedText != "") {
+            $.getJSON(
+          '/RPInfo/keyword3', { "ChangedText": changedText },
+           function (result) {
+               txtBox.value = result.Cardno;
+
+               txtname.value = result.PSGRNM;
+
+
+//document.getElementById("idCardNo").focus();
+
+           });
+            var changedtxt = $('#idCardNo').val();
+            var changedtxt2 = $('#idTransFor').val();
+
+            $.ajax
+               ({
+                   url: '@Url.Action("AccountLoad", "RPInfo")',
+                   type: 'post',
+                   dataType: "json",
+                   data: { type: changedtxt, type2: changedtxt2 },
+                   success: function (data) {
+                       $("#idAccountcd").empty();
+
+                       if (changedtxt2 == "PAYABLE") {
+                           $("#idAccountcd").append('<option value="'
+                         + '">'
+                         + "--Select--" + '</option>');
+                       }
+
+
+
+
+                       $.each(data, function (i, memo) {
+
+                           $("#idAccountcd").append('<option value="'
+                               + memo.Value + '">'
+                               + memo.Text + '</option>');
+
+
+
+
+                       });
+
+                   }
+               });
+
+            $.ajax
+                  ({
+                      url: '@Url.Action("TicketLoad", "RPInfo")',
+                      type: 'post',
+                      dataType: "json",
+                      data: { type: changedtxt, type2: changedtxt2 },
+                      success: function (data) {
+                          $("#idTickNo2").empty();
+
+                          $("#idTickNo2").append('<option value="'
+                            + '">'
+                            + "--Select--" + '</option>');
+
+
+
+
+
+                          $.each(data, function (i, memo) {
+
+                              $("#idTickNo2").append('<option value="'
+                                  + memo.Value + '">'
+                                  + memo.Text + '</option>');
+
+
+
+
+                          });
+
+                      }
+                  });
+
+
+        }
+
+
+
+    }
+    function txtOneChanged4() {
+
+        var changedText = $("#idAccountcd").val();
+
+
+        var txtBox = document.getElementById('idAccountcd');
+
+
+        if (changedText != "") {
+            $.getJSON(
+          '/RPInfo/keyword4', { "ChangedText": changedText },
+           function (result) {
+               txtBox.value = result.Accountnm;
+
+
+
+
+
+
+
+               document.getElementById("idAccountcd").focus();
+
+           });
+        }
+
+
+
+    }
+    </script>
+
+
+
+}
+
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+
+
+<script src="~/Scripts/Underscore.js"></script>
+@section Scripts {
+   
+    @Scripts.Render("~/bundles/jqueryval")
+
+}

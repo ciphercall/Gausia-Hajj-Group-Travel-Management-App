@@ -1,0 +1,584 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using Travel.DataAccess
+@using Travel.Models
+@*@using iTextSharp.text*@
+@model Travel.Models.PageModel
+
+@{
+    Layout = null;
+
+    var LoggedCompId = Model.AGlMaster.COMPID;
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+    string companyName = "", address = "", contactNo = "";
+    TravelDbContext db = new TravelDbContext();
+    var SelectCompanyName = from n in db.AslCompanyDbSet
+
+                            where n.COMPID == compid
+                            select new { n.COMPNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectCompanyName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+
+    // var fromdate = Model.FromDate;
+    var todate = Model.ToDate;
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+    decimal sumdebit = 0, sumcredit = 0, result = 0, totalAsset = 0, totalLiability = 0;
+    int q = 1;
+
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+</head>
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+
+                <tr style="background-color: #00689b">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<span>  @contactno</span></p>
+                    </td>
+
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+                <tr>
+                    <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Balance Sheet</td>
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+
+                <tr style="outline: thin solid">
+                    @{
+                        string d2 = Convert.ToString(todate);
+                        DateTime fdate2 = DateTime.Parse(d2);
+                        string ffdt2 = fdate2.ToString("dd-MMM-yyyy");
+                    }
+
+                    <td colspan="12" style="font-weight: bold;padding:4px">
+                        As On : <span style="font-weight:bold">@ffdt2</span>
+                    </td>
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="14" style="color: white; padding: 4px; font-size: small" align="center">Head Particulars</td>
+                    <td colspan="4" style="color: white; padding: 4px; font-size: small" align="center">Amount</td>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td colspan="18" align="left" style="font-weight:bold;padding-left: 4px;font-size: 20px">ASSET</td>
+                </tr>
+                @{
+                    System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["TravelDbContext"].ToString());
+
+                    string query = string.Format(
+    @"SELECT 'ASSET' COATP,COMPID, SUBSTRING(CONVERT(CHAR,DEBITCD),4,3) ACCD2, SUBSTRING(CONVERT(CHAR,DEBITCD),4,5) ACCD3, SUM(ISNULL(DEBITAMT,0))-SUM(ISNULL(CREDITAMT,0)) AMOUNT
+    FROM GL_MASTER
+    WHERE COMPID='{0}' AND TRANSDT <= '{1}'
+    AND   SUBSTRING(CONVERT(CHAR,DEBITCD),4,1)='1'
+    GROUP BY COMPID,SUBSTRING(CONVERT(CHAR,DEBITCD),4,3), SUBSTRING(CONVERT(CHAR,DEBITCD),4,5)",
+    compid, todate);
+                    System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn);
+                    conn.Open();
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    DataTable ds = new DataTable();
+                    da.Fill(ds);
+
+                    string account2 = "", account3 = "", previous2ndlevel = "";
+                    decimal subasset = 0;
+
+                    foreach (DataRow row in ds.Rows)
+                    {
+                        account2 = row["ACCD2"].ToString();
+                        account3 = row["ACCD3"].ToString();
+
+
+
+                        System.Data.SqlClient.SqlConnection conn2 = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["TravelDbContext"].ToString());
+
+                        string query2 = string.Format(
+        @"SELECT * FROM GL_ACCHART WHERE COMPID='{0}' AND HLEVELCD='2' AND SUBSTRING(CONVERT(CHAR,ACCOUNTCD),4,3)='{1}'",
+        compid, account2);
+                        System.Data.SqlClient.SqlCommand cmd2 = new System.Data.SqlClient.SqlCommand(query2, conn2);
+                        conn2.Open();
+                        SqlDataAdapter da2 = new SqlDataAdapter(cmd2);
+                        DataTable ds2 = new DataTable();
+                        da2.Fill(ds2);
+
+
+                        foreach (DataRow level2 in ds2.Rows)
+                        {
+                            if (previous2ndlevel != account2)
+                            {
+                                if (previous2ndlevel != "")
+                                {
+
+                                    
+                                    decimal amtasset = 0, stasset = 0;
+                                    if (subasset < 0)
+                                    {
+                                        amtasset = subasset * (-1);
+                                        stasset = 1;
+                                    }
+                                    else
+                                    {
+                                        amtasset = subasset;
+                                        stasset = 0;
+                                    }
+                                    string convertamountasset = Convert.ToString(amtasset);
+
+                                    string SubAsset = CommainAmount.AmountwithComma(convertamountasset);
+
+                                   
+
+
+                                    <tr style=" outline: thin solid">
+                                        <td colspan="14" style="font-weight: bold;padding-left: 20px" align="right">SUB ASSET : </td>
+                                        @if (stasset == 0)
+                                            {
+                                                <td colspan="4" style="font-weight: bold" align="right">@SubAsset</td>
+                                            }
+                                            else
+                                            {
+                                        <td colspan="4" style="font-weight: bold" align="right">-@SubAsset</td>
+                                        }
+                                    </tr>
+                                }
+                                <tr>
+                                    <td align="left" colspan="18" style="padding-left: 20px">
+                                        <strong>@level2["ACCOUNTNM"].ToString()</strong>
+                                    </td>
+                                </tr>
+                                subasset = 0;
+                                previous2ndlevel = account2;
+                                break;
+                            }
+
+                        }
+                        conn2.Close();
+
+                        System.Data.SqlClient.SqlConnection conn3 = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["TravelDbContext"].ToString());
+
+                        string query3 = string.Format(
+        @" SELECT * FROM GL_ACCHART WHERE COMPID='{0}' AND HLEVELCD='3' AND SUBSTRING(CONVERT(CHAR,ACCOUNTCD),4,5)='{1}'",
+        compid, account3);
+                        System.Data.SqlClient.SqlCommand cmd3 = new System.Data.SqlClient.SqlCommand(query3, conn3);
+                        conn3.Open();
+                        SqlDataAdapter da3 = new SqlDataAdapter(cmd3);
+                        DataTable ds3 = new DataTable();
+                        da3.Fill(ds3);
+
+                        decimal amountliability=0;
+                        foreach (DataRow level3 in ds3.Rows)
+                        {
+                            amountliability = Convert.ToDecimal(row["AMOUNT"].ToString());
+                            decimal amtamount = 0, staamount = 0;
+                            if (amountliability < 0)
+                            {
+                                amtamount = amountliability * (-1);
+                                staamount = 1;
+                            }
+                            else
+                            {
+                                amtamount = amountliability;
+                                staamount = 0;
+                            }
+                            string convertamountasset24 = Convert.ToString(amtamount);
+
+                            string SubAsset24 = CommainAmount.AmountwithComma(convertamountasset24);
+                            <tr style=" outline: thin solid">
+                                <td align="left" colspan="14" style="padding-left: 40px">
+                                    @level3["ACCOUNTNM"].ToString()
+                                </td>
+                                @if (staamount==0)
+                                {
+                                     <td align="left" colspan="4" style="padding-left: 20px;text-align:right">
+                                    <strong>@SubAsset24</strong>
+                                </td>
+                                }
+                                else
+                                {
+                                     <td align="left" colspan="4" style="padding-left: 20px;text-align:right">
+                                    <strong>-@SubAsset24</strong>
+                                </td>
+                                }
+                               
+                            </tr>
+                            subasset = subasset + Convert.ToDecimal(row["AMOUNT"].ToString());
+                            totalAsset = totalAsset + Convert.ToDecimal(row["AMOUNT"].ToString());
+
+                        }
+                        conn3.Close();
+
+
+                    }
+                    conn.Close();
+
+
+                }
+
+                @{
+                     
+                    decimal amtasset2 = 0, stasset2 = 0;
+                    if (subasset < 0)
+                    {
+                        amtasset2 = subasset * (-1);
+                        stasset2 = 1;
+                    }
+                    else
+                    {
+                        amtasset2 = subasset;
+                        stasset2 = 0;
+                    }
+                    string convertamountasset2 = Convert.ToString(amtasset2);
+
+                    string SubAsset2 = CommainAmount.AmountwithComma(convertamountasset2);
+                }
+
+                <tr style=" outline: thin solid">
+                    <td colspan="14" style="font-weight: bold;padding-left: 20px" align="right">SUB ASSET : </td>
+                    @if (stasset2 == 0)
+                        {
+                            <td colspan="4" style="font-weight: bold" align="right">@SubAsset2</td>
+                        }
+                        else
+                        {
+                    <td colspan="4" style="font-weight: bold" align="right">-@SubAsset2</td>
+                    }
+                </tr>
+
+
+                @{
+                    decimal amt = 0, st = 0;
+                    if (totalAsset < 0)
+                    {
+                        amt = totalAsset * (-1);
+                        st = 1;
+                    }
+                    else
+                    {
+                        amt = totalAsset;
+                        st = 0;
+                    }
+                    string convertamount = Convert.ToString(amt);
+
+                    string tAsset = CommainAmount.AmountwithComma(convertamount);
+
+                }
+
+                <tr style=" outline: thin solid">
+                    <td colspan="14" style="font-weight: bold;padding-left: 20px" align="right">TOTAL ASSET : </td>
+                    @if (st == 0)
+                    {
+                        <td colspan="4" style="font-weight: bold" align="right">@tAsset</td>
+                    }
+                    else
+                    {
+                        <td colspan="4" style="font-weight: bold" align="right">-@tAsset</td>
+                    }
+
+                </tr>
+
+
+                <tr>
+                    <td><br /></td>
+                </tr>
+                <tr>
+                    <td colspan="18" style="font-weight:bold;padding-left: 4px;font-size: 20px" align="left">LIABILITY</td>
+                </tr>
+
+
+
+                @{
+                    System.Data.SqlClient.SqlConnection conn4 = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["TravelDbContext"].ToString());
+
+                    string query4 = string.Format(
+    @"SELECT COATP,COMPID, ACCD2, ACCD3, SUM(ISNULL(AMOUNT,0)) AMOUNT
+FROM(
+SELECT 'LIABILITY' COATP,COMPID, SUBSTRING(CONVERT(CHAR,DEBITCD),4,3) ACCD2, SUBSTRING(CONVERT(CHAR,DEBITCD),4,5) ACCD3, SUM(ISNULL(CREDITAMT,0))-SUM(ISNULL(DEBITAMT,0)) AMOUNT
+FROM GL_MASTER
+WHERE COMPID='{0}' AND TRANSDT <= '{1}'
+AND   SUBSTRING(CONVERT(CHAR,DEBITCD),4,1)='2'
+GROUP BY COMPID,SUBSTRING(CONVERT(CHAR,DEBITCD),4,3), SUBSTRING(CONVERT(CHAR,DEBITCD),4,5)
+UNION ALL
+SELECT 'LIABILITY' COATP, COMPID,'201' ACCD2, '20102' ACCD3, ISNULL((SUM(ISNULL(CREDITAMT,0))-SUM(ISNULL(DEBITAMT,0))),0) AMOUNT
+FROM GL_MASTER
+WHERE COMPID='{0}' AND TRANSDT <= '{1}'
+AND   SUBSTRING(CONVERT(CHAR,DEBITCD),4,1) IN ('3','4')
+--GROUP BY '201', '20102'
+GROUP BY COMPID
+) A
+GROUP BY COATP,COMPID, ACCD2, ACCD3",
+    compid, todate);
+                    System.Data.SqlClient.SqlCommand cmd4 = new System.Data.SqlClient.SqlCommand(query4, conn4);
+                    conn4.Open();
+                    SqlDataAdapter da4 = new SqlDataAdapter(cmd4);
+                    DataTable ds4 = new DataTable();
+                    da4.Fill(ds4);
+
+                    string liability2 = "", liability3 = "", previousliability2nd = "";
+                    decimal subtotal = 0;
+
+
+                    foreach (DataRow row in ds4.Rows)
+                    {
+                        liability2 = row["ACCD2"].ToString();
+                        liability3 = row["ACCD3"].ToString();
+
+
+
+                        System.Data.SqlClient.SqlConnection conn2 = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["TravelDbContext"].ToString());
+
+                        string query2 = string.Format(
+        @"SELECT * FROM GL_ACCHART WHERE COMPID='{0}' AND HLEVELCD='2' AND SUBSTRING(CONVERT(CHAR,ACCOUNTCD),4,3)='{1}'",
+        compid, liability2);
+                        System.Data.SqlClient.SqlCommand cmd2 = new System.Data.SqlClient.SqlCommand(query2, conn2);
+                        conn2.Open();
+                        SqlDataAdapter da2 = new SqlDataAdapter(cmd2);
+                        DataTable ds2 = new DataTable();
+                        da2.Fill(ds2);
+
+
+                        foreach (DataRow level2 in ds2.Rows)
+                        {
+                            if (previousliability2nd != liability2)
+                            {
+
+                                if (previousliability2nd != "")
+                                {
+                                    decimal amtlia = 0, stlia = 0;
+                                    string SubLiability = "";
+                                    if (subtotal < 0)
+                                    {
+                                        amtlia = subtotal * (-1);
+                                        stlia = 1;
+                                    }
+                                    else
+                                    {
+                                        amtlia = subtotal;
+                                        stlia = 0;
+                                    }
+                                    string convertamountlia = Convert.ToString(amtlia);
+                                    if (convertamountlia == "0")
+                                    {
+                                        SubLiability = "0";
+                                    }
+                                    else
+                                    {
+                                        SubLiability = CommainAmount.AmountwithComma(convertamountlia);
+                                    }
+                                    
+                                    
+                                    <tr style=" outline: thin solid">
+                                        <td colspan="14" style="font-weight: bold;padding-left: 20px" align="right">SUB LIABILITY : </td>
+                                        @if (stlia == 0)
+                                            {
+                                                <td colspan="4" style="font-weight: bold" align="right">@SubLiability</td>
+                                            }
+                                            else
+                                            {
+                                        <td colspan="4" style="font-weight: bold" align="right">-@SubLiability</td>
+                                        }
+                                    </tr>
+                                }
+                                <tr>
+                                    <td align="left" colspan="18" style="padding-left: 20px">
+                                        <strong>@level2["ACCOUNTNM"].ToString()</strong>
+                                    </td>
+                                </tr>
+                                subtotal = 0;
+                                previousliability2nd = liability2;
+                                break;
+                            }
+
+                        }
+                        conn2.Close();
+
+                        System.Data.SqlClient.SqlConnection conn3 = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["TravelDbContext"].ToString());
+
+                        string query3 = string.Format(
+        @" SELECT * FROM GL_ACCHART WHERE COMPID='{0}' AND HLEVELCD='3' AND SUBSTRING(CONVERT(CHAR,ACCOUNTCD),4,5)='{1}'",
+        compid, liability3);
+                        System.Data.SqlClient.SqlCommand cmd3 = new System.Data.SqlClient.SqlCommand(query3, conn3);
+                        conn3.Open();
+                        SqlDataAdapter da3 = new SqlDataAdapter(cmd3);
+                        DataTable ds3 = new DataTable();
+                        da3.Fill(ds3);
+
+                        decimal liabilityamount=0;
+                        foreach (DataRow level3 in ds3.Rows)
+                        {
+                            liabilityamount = Convert.ToDecimal(row["AMOUNT"].ToString());
+                            decimal amtliab = 0, stliab = 0;
+                            string SubLiability24 = "";
+                            if (liabilityamount < 0)
+                            {
+                                amtliab = liabilityamount * (-1);
+                                stliab = 1;
+                            }
+                            else
+                            {
+                                amtliab = liabilityamount;
+                                stliab = 0;
+                            }
+                            string convertamountliab = Convert.ToString(amtliab);
+                            if (convertamountliab == "0")
+                            {
+                                SubLiability24 = "0";
+                            }
+                            else
+                            {
+                                SubLiability24 = CommainAmount.AmountwithComma(convertamountliab);
+                            }
+                            <tr style=" outline: thin solid">
+                                <td align="left" colspan="14" style="padding-left: 40px">
+                                    @level3["ACCOUNTNM"].ToString()
+                                </td>
+                                @if(stliab==0)
+                                {
+                                     <td align="left" colspan="4" style="padding-left: 20px;text-align:right">
+                                    <strong>@SubLiability24</strong>
+                                </td>
+                                }
+                                else
+                                {
+                                     <td align="left" colspan="4" style="padding-left: 20px;text-align:right">
+                                    <strong>-@SubLiability24</strong>
+                                </td>
+                                }
+                               
+                            </tr>
+                            subtotal = subtotal + Convert.ToDecimal(row["AMOUNT"].ToString());
+                            totalLiability = totalLiability + Convert.ToDecimal(row["AMOUNT"].ToString());
+
+                        }
+                        conn3.Close();
+
+
+                    }
+                    conn.Close();
+
+
+
+                }
+                @{
+                    decimal amtlia2 = 0, stlia2 = 0;
+                    string SubLiability2 = "";
+                    if (subtotal < 0)
+                    {
+                        amtlia2 = subtotal * (-1);
+                        stlia2 = 1;
+                    }
+                    else
+                    {
+                        amtlia2 = subtotal;
+                        stlia2 = 0;
+                    }
+                    string convertamountlia2 = Convert.ToString(amtlia2);
+                    if (convertamountlia2 == "0")
+                    {
+                        SubLiability2 = "0";
+                    }
+                    else
+                    {
+                        SubLiability2 = CommainAmount.AmountwithComma(convertamountlia2);
+                    }
+                }
+                <tr style=" outline: thin solid">
+                    <td colspan="14" style="font-weight: bold;padding-left: 20px" align="right">SUB LIABILITY : </td>
+                    @if (stlia2 == 0)
+                        {
+                            <td colspan="4" style="font-weight: bold" align="right">@SubLiability2</td>
+                        }
+                        else
+                        {
+                    <td colspan="4" style="font-weight: bold" align="right">-@SubLiability2</td>
+                    }
+                </tr>
+
+
+                @{
+                    decimal amt1 = 0, st4 = 0;
+                    string tLiability = "";
+                    if (totalLiability < 0)
+                    {
+                        amt1 = totalLiability * (-1);
+                        st4 = 1;
+                    }
+                    else
+                    {
+                        amt1 = totalLiability;
+                        st4 = 0;
+                    }
+                    string convertamount1 = Convert.ToString(amt1);
+                    if (convertamount1 == "0")
+                    {
+                        tLiability = "0";
+                    }
+                    else
+                    {
+                        tLiability = CommainAmount.AmountwithComma(convertamount1);
+                    }
+
+                }
+
+                <tr style=" outline: thin solid">
+                    <td colspan="14" style="font-weight: bold;padding-left: 20px" align="right">TOTAL LIABILITY : </td>
+                    @if (st4 == 0)
+                    {
+                        <td colspan="4" style="font-weight: bold" align="right">@tLiability</td>
+                    }
+                    else
+                    {
+                        <td colspan="4" style="font-weight: bold" align="right">-@tLiability</td>
+                    }
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

@@ -1,0 +1,218 @@
+﻿@using System.Web.UI.WebControls
+@using Travel.Models
+@model Travel.Models.PageModel
+
+@{
+    ViewBag.Title = "CardInfoSerial";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+
+
+
+
+    TravelDbContext db = new TravelDbContext();
+}
+
+
+@*<link href="~/Content/bootstrap%20datepicker%20css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap%20datepicker%20css/datepicker3.css" rel="stylesheet" />
+
+<script src="~/Scripts/bootstrap-datepicker.js"></script>*@
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.passenger.COMPID, new { id = "txtCompId", @Value = LoggedCompId })
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Card Information -Serial</h1>
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+
+               
+
+                <div class="col-md-3">
+                    <span>@Html.Label("name", "Card No(From)", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.CardNoFrom, new { @class = "form-control input-sm", id = "idCardNoFrom" })
+
+                </div>
+
+                <div class="col-md-3">
+                        <span>@Html.Label("name", "Card No(To)", htmlAttributes: new { @class = "control-label" })</span>
+                        @Html.TextBoxFor(model => model.CardNoTo, new { @class = "form-control input-sm", id = "idCardNoTo" })
+
+                    </div>
+
+
+                <div class="col-md-1">
+                    <span><br /></span>
+                    <input id="SubmitId" type="submit" class="btn btn-info" value="Print" name="command" formtarget="_blank" />
+                </div>
+                <div class="col-md-2"></div>
+            </div>
+        </div>
+
+
+
+    </div>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            $('#idCardNoFrom').autocomplete({
+
+                  source: function (request, response) {
+
+                $.ajax({
+                    url: '/RPInfo/TagSearch3',
+                    type: 'GET',
+                    cache: false,
+                    data: { query: request.term },
+                    dataType: 'json',
+                    success: function (data) {
+                        response($.map(data, function (item) {
+                            return {
+                                label: item.CARDNO,
+                                value: item.CARDNO,
+                                name: item.PSGRNM
+
+
+                            };
+                        }));
+                    }
+                });
+            },
+                select: function (event, ui) {
+                    //var changedtxt = ui.item.value;
+                    $('#idCardNoFrom').val(ui.item.value);
+                    //document.getElementById("idCardNoTo").focus();
+                },
+
+                change: $('#idCardNoFrom').keyup(_.debounce(txtOneChanged3, 100))
+
+            });
+            $('#idCardNoTo').autocomplete({
+
+
+                  source: function (request, response) {
+
+                $.ajax({
+                    url: '/RPInfo/TagSearch3',
+                    type: 'GET',
+                    cache: false,
+                    data: { query: request.term },
+                    dataType: 'json',
+                    success: function (data) {
+                        response($.map(data, function (item) {
+                            return {
+                                label: item.CARDNO,
+                                value: item.CARDNO,
+                                name: item.PSGRNM
+
+
+                            };
+                        }));
+                    }
+                });
+            },
+                select: function (event, ui) {
+                    //var changedtxt = ui.item.value;
+                    $('#idCardNoTo').val(ui.item.value);
+                    //document.getElementById("idCardNoTo").focus();
+                },
+
+                change: $('#idCardNoTo').keyup(_.debounce(txtOneChanged4, 100))
+
+            });
+        });
+        function txtOneChanged3() {
+
+            var changedText = $("#idCardNoFrom").val();
+
+
+            var txtBox = document.getElementById('idCardNoFrom');
+
+
+            if (changedText != "") {
+                $.getJSON(
+              '/RPInfo/keyword3', { "ChangedText": changedText },
+               function (result) {
+                   txtBox.value = result.Cardno;
+
+
+
+
+
+
+
+                  // document.getElementById("idCardNoFrom").focus();
+
+               });
+            }
+
+
+
+        }
+        function txtOneChanged4() {
+
+            var changedText = $("#idCardNoTo").val();
+
+
+            var txtBox = document.getElementById('idCardNoTo');
+
+
+            if (changedText != "") {
+                $.getJSON(
+              '/RPInfo/keyword3', { "ChangedText": changedText },
+               function (result) {
+                   txtBox.value = result.Cardno;
+
+
+
+
+
+
+
+                   //document.getElementById("idCardNoTo").focus();
+
+               });
+            }
+
+
+
+        }
+</script>
+
+
+}
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+
+<script src="~/Scripts/Underscore.js"></script>
+
+
+

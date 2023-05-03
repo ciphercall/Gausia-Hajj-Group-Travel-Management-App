@@ -1,0 +1,614 @@
+﻿@using System.Activities
+@using Travel.Models
+@model Travel.Models.PageModel
+@using Travel.DataAccess
+
+@{
+    ViewBag.Title = "VoucharReport";
+    Layout = null;
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    Int64 compid = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+    Int64 branchid = Model.AGlStrans.BRANCHID;
+    string companyName = "", address = "", contactNo = "";
+    TravelDbContext db = new TravelDbContext();
+    var SelectUserName = from n in db.Asl_BranchDbSet
+                         where n.BRANCHID == branchid
+                         select new { n.BRANCHNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectUserName)
+    {
+        companyName = n.BRANCHNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    string vouchar = Convert.ToString(Model.AGlStrans.TRANSTP);
+    string Vouchar = "", lebel1 = "", lebel2 = "";
+    var forREC = from n in db.GlAcchartDbSet where n.COMPID == compid select n;
+
+    if (vouchar == "MREC")
+    {
+        string debitcd = Convert.ToString(Model.AGlStrans.DEBITCD).Substring(0, 6);
+        Int64 debit = Convert.ToInt64(debitcd);
+        foreach (var x in forREC)
+        {
+            if (x.ACCOUNTCD == debit)
+            {
+                Vouchar = "CREDIT VOUCHER" + "-" + x.ACCOUNTNM;
+                break;
+            }
+        }
+        lebel1 = "Received To ";
+        lebel2 = "Received From ";
+    }
+    else if (vouchar == "MPAY")
+    {
+        string creditcd = Convert.ToString(Model.AGlStrans.CREDITCD).Substring(0, 6);
+        Int64 credit = Convert.ToInt64(creditcd);
+        foreach (var x in forREC)
+        {
+            if (x.ACCOUNTCD == credit)
+            {
+                Vouchar = "DEBIT VOUCHER" + "-" + x.ACCOUNTNM;
+                break;
+            }
+        }
+        lebel1 = "Paid To ";
+        lebel2 = "Paid From ";
+    }
+    else if (vouchar == "JOUR")
+    {
+        Vouchar = "JOURNAL Vouchar";
+        lebel1 = "Debited To ";
+        lebel2 = "Credited From ";
+    }
+    else
+    {
+        Vouchar = "CONTRA Vouchar";
+        lebel1 = "Deposited To ";
+        lebel2 = "Withdrawl From ";
+    }
+
+
+    var InvoiceNo = Model.AGlStrans.TRANSNO;
+    var date = Model.AGlStrans.TRANSDT;
+
+    var dd = Model.AGlStrans.DEBITCD;
+    var cc = Model.AGlStrans.CREDITCD;
+    string dds = "", ccs = "";
+    var forddcc = from n in db.GlAcchartDbSet where n.COMPID == compid select n;
+    foreach (var x in forddcc)
+    {
+        if (x.ACCOUNTCD == dd)
+        {
+            dds = x.ACCOUNTNM;
+        }
+        if (x.ACCOUNTCD == cc)
+        {
+            ccs = x.ACCOUNTNM;
+        }
+    }
+
+    string amount = "", InWords = "";
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+    Decimal totalGross = 0;
+    
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+<body style="background-color:#fafafa;">
+
+   
+         <div style="width: 21cm;height:29.7cm; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+
+        <table style="width: 100%">
+            <tr>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="10%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+
+            </tr>
+            <tr style="background-color: white">
+               
+                   
+               
+             <td colspan="2">
+                 <img src="~/Content/homeDesign/images/travel/gg3.JPG" style="width: 100%" height="70" alt="" />
+               
+             </td>
+                
+                <td colspan="12" style="text-align:left">
+                    <h2 style="color: blue" >@compNm</h2>
+                   
+                </td>
+                <td colspan="2" align="left">Office Copy</td>
+                <td colspan="2">
+                    <img src="~/Content/homeDesign/images/travel/iata.png" style="width:100%" height="70" alt="" />
+                </td>
+
+
+            </tr>
+
+            @*<tr style="width:100%">
+                <td colspan="18">
+                    <h3 style="font-size: larger;color:RED" align="center">
+                        @Vouchar
+
+                    </h3>
+                </td>
+
+
+            </tr>*@
+
+
+
+            <tr style="outline: thin solid">
+                <td align="left" colspan="3" style="padding-left:8px">Invoice  </td>
+                <td align="left" colspan="6"> : @InvoiceNo </td>
+                @{
+                    string a = Convert.ToString(date);
+                    DateTime invoicedate = DateTime.Parse(a);
+                    string InvDate = invoicedate.ToString("dd-MMM-yyyy");
+                }
+                <td align="right" colspan="9">Date : <span>@InvDate</span></td>
+
+
+            </tr>
+            <tr style="outline: thin solid">
+                <td colspan="3" style="padding-left:8px">@lebel1 </td>
+                <td colspan="15">: @dds </td>
+            </tr>
+            <tr style="outline: thin solid">
+                <td colspan="3" style="padding-left:8px">@lebel2 </td>
+                <td colspan="15">: @ccs </td>
+            </tr>
+            <tr style="background-color: #00689b; outline: thin solid">
+                <td style="color: white" align="center" colspan="15">Particulars</td>
+
+                <td style="color: white" align="center" colspan="3">Amount</td>
+
+
+
+            </tr>
+            @{
+                string convertopamount2 = Convert.ToString(Model.AGlStrans.AMOUNT)+".00";
+                string amountwithcomma = CommainAmount.AmountwithComma(convertopamount2);
+            }
+            <tr>
+                <td colspan="15" style="padding-left:8px">
+                    @Model.AGlStrans.REMARKS
+                </td>
+                <td colspan="3" align="right">
+                    @amountwithcomma
+                </td>
+
+
+            </tr>
+
+            <tr>
+                <td colspan="15" align="right"></td>
+                <td colspan="3" align="right">_____________</td>
+            </tr>
+
+            <tr>
+
+
+                <td colspan="15" align="right"><strong>Total:</strong></td>
+                <td colspan="3" align="right"><strong>@amountwithcomma</strong></td>
+            </tr>
+
+            <tr>
+
+
+                <td colspan="3" align="left" style="padding-left:8px">Card No</td>
+                <td colspan="15" align="left">: @Model.AGlStrans.CARDNO - @Model.passenger.PSGRNM</td>
+              
+            </tr>
+
+            @if (vouchar == "JOUR")
+            {
+
+            }
+            else
+            {
+                var search_cardtypeid = (from n in db.passengerDbSet where n.COMPID == compid && n.CARDNO == Model.AGlStrans.CARDNO select n).ToList();
+                string cardtp = "",cardyy="";
+                foreach(var ss in search_cardtypeid)
+                {
+                    Int64 cardcid = Convert.ToInt64(ss.CARDCID);
+                    var search_name = (from n in db.GLCostPMSTDbSet where n.COMPID == compid && n.COSTCID == cardcid select n).ToList();
+                    foreach(var foring in search_name)
+                    {
+                        cardtp = foring.COSTCNM;
+                        
+                    }
+                    cardyy = Convert.ToString(ss.CARDYY);
+                    
+                }
+                
+                <tr>
+                    <td colspan="3" align="left" style="padding-left:8px">Mode of Payment </td>
+                    <td colspan="4" align="left">: @Model.AGlStrans.TRANSMODE</td>
+                    <td colspan="4" align="left">Card Type </td>
+                    <td colspan="7" align="left">: @cardtp - @cardyy</td>
+                </tr>
+                <tr>
+                    <td colspan="3" align="left" style="padding-left:8px">Cheque No </td>
+                    <td colspan="4" align="left">: @Model.AGlStrans.CHEQUENO</td>
+
+                    <td colspan="4" align="left">Cheque Date  </td>
+                    @{
+                string d = Convert.ToString(Model.AGlStrans.CHEQUEDT);
+
+
+                    }
+                    @if (d == "")
+                    {
+                        <td colspan="4" align="left">:</td>
+
+                    }
+                    else
+                    {
+                        DateTime fdate = DateTime.Parse(d);
+                        string ffdt = fdate.ToString("dd-MMM-yyyy");
+                        <td colspan="4" align="left">: @ffdt</td>
+                    }
+
+
+                </tr>
+
+            }
+
+            @{
+                amount = Convert.ToString(Model.AGlStrans.AMOUNT);
+                InWords = SpellAmount.MoneyConvFn(amount);
+
+            }
+
+            <tr style="outline: thin solid">
+
+
+                <td colspan="18" align="left" style="padding-left:8px">In Words : <span>@InWords</span></td>
+
+            </tr>
+
+            <tr style="height: 35px">
+                <td></td>
+                <td></td>
+
+            </tr>
+            <tr>
+                <td colspan="4">________________________</td>
+
+                <td colspan="10">
+                   
+                </td>
+
+                <td colspan="4">________________________</td>
+
+
+            </tr>
+            <tr>
+                <td colspan="4"><p style="text-align:center">Signature<br />Receiver</p></td>
+
+                <td colspan="10"><img src="~/Content/homeDesign/images/travel/gg.JPG" style="width:87px" height="60" alt="" />
+                    <img src="~/Content/homeDesign/images/travel/gg2.JPG" style="width:87px" height="60" alt="" />
+                    <img src="~/Content/homeDesign/images/travel/gg3.JPG" style="width:87px" height="60" alt="" />
+                    <img src="~/Content/homeDesign/images/travel/gg4.JPG" style="width:87px" height="60" alt="" />
+                </td>
+
+                <td colspan="4"><p style="text-align:center">Signature<br />For @compNm</p></td>
+
+
+            </tr>
+            <tr>
+                <td colspan="18">
+                    <p style="color:black">@Address, Phone: @contactno</p>
+                   
+
+                </td>
+            </tr>
+            
+            <tr style="background-color: #00689b">
+                <td colspan="14" style="color: white;padding:8px" align="left">
+                    Powered By Alchemy Software
+                </td>
+                <td align="right" colspan="4" style="color: white; padding: 8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+            </tr>
+
+
+        </table>
+            
+             <p style="width:100%">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - </p>
+            
+             <table style="width: 100%">
+                 <tr>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="10%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+                     <td width="5%"></td>
+
+                 </tr>
+                 <tr style="background-color: white">
+
+
+
+                     <td colspan="2">
+                         <img src="~/Content/homeDesign/images/travel/gg3.JPG" style="width: 100%" height="70" alt="" />
+
+                     </td>
+
+                     <td colspan="12" style="text-align:left">
+                         <h2 style="color: blue">@compNm</h2>
+
+                     </td>
+                     <td colspan="2" align="left">Client Copy</td>
+                     <td colspan="2">
+                         <img src="~/Content/homeDesign/images/travel/iata.png" style="width:100%" height="70" alt="" />
+                     </td>
+
+
+                 </tr>
+
+                 @*<tr style="width:100%">
+            <td colspan="18">
+                <h3 style="font-size: larger;color:RED" align="center">
+                    @Vouchar
+
+                </h3>
+            </td>
+
+
+        </tr>*@
+
+
+
+                 <tr style="outline: thin solid">
+                     <td align="left" colspan="3" style="padding-left:8px">Invoice  </td>
+                     <td align="left" colspan="6"> : @InvoiceNo </td>
+                     @{
+                         string a1 = Convert.ToString(date);
+                         DateTime invoicedate1 = DateTime.Parse(a1);
+                         string InvDate1 = invoicedate.ToString("dd-MMM-yyyy");
+                     }
+                     <td align="right" colspan="9">Date : <span>@InvDate1</span></td>
+
+
+                 </tr>
+                 <tr style="outline: thin solid">
+                     <td colspan="3" style="padding-left:8px">@lebel1 </td>
+                     <td colspan="15">: @dds </td>
+                 </tr>
+                 <tr style="outline: thin solid">
+                     <td colspan="3" style="padding-left:8px">@lebel2 </td>
+                     <td colspan="15">: @ccs </td>
+                 </tr>
+                 <tr style="background-color: #00689b; outline: thin solid">
+                     <td style="color: white" align="center" colspan="15">Particulars</td>
+
+                     <td style="color: white" align="center" colspan="3">Amount</td>
+
+
+
+                 </tr>
+                 @{
+                     string convertopamount3 = Convert.ToString(Model.AGlStrans.AMOUNT) + ".00";
+                     string amountwithcomma3 = CommainAmount.AmountwithComma(convertopamount3);
+                 }
+                 <tr>
+                     <td colspan="15" style="padding-left:8px">
+                         @Model.AGlStrans.REMARKS
+                     </td>
+                     <td colspan="3" align="right">
+                         @amountwithcomma3
+                     </td>
+
+
+                 </tr>
+
+                 <tr>
+                     <td colspan="15" align="right"></td>
+                     <td colspan="3" align="right">_____________</td>
+                 </tr>
+
+                 <tr>
+
+
+                     <td colspan="15" align="right"><strong>Total:</strong></td>
+                     <td colspan="3" align="right"><strong>@amountwithcomma</strong></td>
+                 </tr>
+
+                 <tr>
+
+
+                     <td colspan="3" align="left" style="padding-left:8px">Card No</td>
+                     <td colspan="15" align="left">: @Model.AGlStrans.CARDNO - @Model.passenger.PSGRNM</td>
+
+                 </tr>
+
+                 @if (vouchar == "JOUR")
+                 {
+
+                 }
+                 else
+                 {
+                     var search_cardtypeid = (from n in db.passengerDbSet where n.COMPID == compid && n.CARDNO == Model.AGlStrans.CARDNO select n).ToList();
+                     string cardtp = "";
+                     foreach (var ss in search_cardtypeid)
+                     {
+                         Int64 cardcid = Convert.ToInt64(ss.CARDCID);
+                         var search_name = (from n in db.GLCostPMSTDbSet where n.COMPID == compid && n.COSTCID == cardcid select n).ToList();
+                         foreach (var foring in search_name)
+                         {
+                             cardtp = foring.COSTCNM;
+                         }
+
+                     }
+
+                     <tr>
+                         <td colspan="3" align="left" style="padding-left:8px">Mode of Payment </td>
+                         <td colspan="4" align="left">: @Model.AGlStrans.TRANSMODE</td>
+                         <td colspan="4" align="left">Card Type </td>
+                         <td colspan="7" align="left">: @cardtp</td>
+                     </tr>
+                     <tr>
+                         <td colspan="3" align="left" style="padding-left:8px">Cheque No </td>
+                         <td colspan="4" align="left">: @Model.AGlStrans.CHEQUENO</td>
+
+                         <td colspan="4" align="left">Cheque Date  </td>
+                         @{
+                     string d = Convert.ToString(Model.AGlStrans.CHEQUEDT);
+
+
+                         }
+                         @if (d == "")
+                         {
+                             <td colspan="4" align="left">:</td>
+
+                         }
+                         else
+                         {
+                             DateTime fdate = DateTime.Parse(d);
+                             string ffdt = fdate.ToString("dd-MMM-yyyy");
+                             <td colspan="4" align="left">: @ffdt</td>
+                         }
+
+
+                     </tr>
+
+                 }
+
+                 @{
+                     amount = Convert.ToString(Model.AGlStrans.AMOUNT);
+                     InWords = SpellAmount.MoneyConvFn(amount);
+
+                 }
+
+                 <tr style="outline: thin solid">
+
+
+                     <td colspan="18" align="left" style="padding-left:8px">In Words : <span>@InWords</span></td>
+
+                 </tr>
+
+                 <tr style="height: 35px">
+                     <td></td>
+                     <td></td>
+
+                 </tr>
+                 <tr>
+                     <td colspan="4">________________________</td>
+
+                     <td colspan="10"></td>
+
+                     <td colspan="4">________________________</td>
+
+
+                 </tr>
+                 <tr>
+                     <td colspan="4"><p style="text-align:center">Signature<br />Receiver</p></td>
+
+                     <td colspan="10">
+                         <img src="~/Content/homeDesign/images/travel/gg.JPG" style="width:87px" height="60" alt="" />
+                         <img src="~/Content/homeDesign/images/travel/gg2.JPG" style="width:87px" height="60" alt="" />
+                         <img src="~/Content/homeDesign/images/travel/gg3.JPG" style="width:87px" height="60" alt="" />
+                         <img src="~/Content/homeDesign/images/travel/gg4.JPG" style="width:87px" height="60" alt="" />
+                     </td>
+
+                     <td colspan="4"><p style="text-align:center">Signature<br />For @compNm</p></td>
+
+
+                 </tr>
+                 <tr>
+                     <td colspan="18">
+                         <p style="color:black">@Address, Phone: @contactno</p>
+
+
+                     </td>
+                 </tr>
+
+                 <tr style="background-color: #00689b">
+                     <td colspan="14" style="color: white;padding:8px" align="left">
+                         Powered By Alchemy Software
+                     </td>
+                     <td align="right" colspan="4" style="color: white; padding: 8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                 </tr>
+
+
+             </table>
+
+
+        </div>
+
+
+   
+   
+
+
+
+
+
+</body>
+</html>

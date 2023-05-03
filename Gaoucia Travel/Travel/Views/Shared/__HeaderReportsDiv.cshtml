@@ -1,0 +1,31 @@
+﻿
+@using System.Linq
+@using Travel.Models
+
+@{
+    TravelDbContext db = new TravelDbContext();
+    string companyName = "", address = "", contactNo = "", address2 = "";
+    Int64 companyID = ViewBag.COMPID;
+    var re = from m in db.AslCompanyDbSet where m.COMPID == companyID select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in re)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+}
+
+
+<tr style="background-color: #00689b">
+    <td colspan="12">
+        <h3 style="color: white;padding:4px">@compNm</h3>
+        <p style="color:white;padding-left:4px">@Address<br /> @address2</p>
+    </td>
+    <td colspan="6" style="color: white;padding:8px" align="right">
+        Powered By<br />Alchemy Software
+    </td>
+</tr>

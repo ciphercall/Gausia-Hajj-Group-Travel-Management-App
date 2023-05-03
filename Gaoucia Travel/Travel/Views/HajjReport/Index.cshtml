@@ -1,0 +1,236 @@
+﻿
+@using System.Data
+@using System.Data.SqlClient
+@using Travel.Models
+@model Travel.Models.PageModel
+@{
+    ViewBag.Title = "Index";
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    Int64 compid = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+
+
+    TravelDbContext db = new TravelDbContext();
+
+
+    List<SelectListItem> costcid = new List<SelectListItem>();
+    var costpnm = (from n in db.GlCostPoolDbSet where n.COMPID == compid select new { n.COSTCID, n.COSTPNM }).ToList();
+    foreach (var item in costpnm)
+    {
+        costcid.Add(new SelectListItem { Text = item.COSTPNM, Value = Convert.ToString(item.COSTCID) });
+    }
+
+
+    List<SelectListItem> licenselist = new List<SelectListItem>();
+    var licensename = (from n in db.licenseDbSet where n.COMPID == compid select new { n.LICENSENM, n.LICENSEID }).ToList();
+    foreach(var ss in licensename)
+    {
+        licenselist.Add(new SelectListItem { Text = ss.LICENSENM, Value = Convert.ToString(ss.LICENSEID) });
+    }
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+    string tt = currentDateTime.ToString("dd-MMM-yyyy");
+}
+
+<link href="~/Content/bootstrap_datepicker_css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap_datepicker_css/datepicker3.css" rel="stylesheet" />
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.passenger.COMPID, new { id = "txtcompid", @Value = compid })
+
+
+    <div id="contentHeaderBox">
+
+
+
+        <h1 style="padding-left:16px">
+            HAJJ/UMRAH REPORT - LICENSE WISE
+        </h1>
+
+
+
+
+
+
+
+
+    </div>
+    <br />
+    <div class="col-md-12">
+
+        <div class="form-group">
+
+            <div class="row">
+                <div class="col-md-3">
+                    <span>@Html.Label("License Name", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.DropDownListFor(model => model.passenger.LICENSEID, licenselist, htmlAttributes: new { id = "idTransDT", @class = "form-control" })
+                </div>
+                <div class="col-md-3">
+                    <span>@Html.Label("Card Type", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.DropDownListFor(model => model.AGlCostPool.COSTCID, costcid, htmlAttributes: new { id = "idTransDT", @class = "form-control" })
+                </div>
+                <div class="col-md-2">
+                    <span>@Html.Label("From Date", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.FromDate, htmlAttributes: new { id = "FromDate", @class = "form-control", @Value = tt })
+                </div>
+                <div class="col-md-2">
+                    <span>@Html.Label("To Date", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.ToDate, htmlAttributes: new { id = "ToDate", @class = "form-control", @Value = tt })
+                </div>
+                <div class="col-md-2">
+                    <span><br /></span>
+                    <input id="SubmitId" type="submit" class="btn btn-info" value="Print" formtarget="_blank" />
+                </div>
+            </div>
+
+
+            <br />
+
+
+
+
+
+
+
+
+
+
+
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+    <script language="javascript" type="text/javascript">
+        $(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+
+            function showPosition(position) {
+                var coordinates = position.coords;
+                $("#lat").val(coordinates.latitude);
+                $("#lon").val(coordinates.longitude);
+
+                $("#latlon").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+            }
+            //function positionError(position) {
+            //    alert("!!! Error: "+position.code);
+            //}
+        });
+    </script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+
+
+            //$(function () {
+            //    $("#FromDate").datepicker({ dateFormat: 'dd-M-yy', changeYear: true });
+            //});
+            //$(function () {
+            //    $("#ToDate").datepicker({ dateFormat: 'dd-M-yy', changeYear: true });
+            //});
+
+
+            //$("#CARDYY").datepicker({
+            //    format: "yyyy", // Notice the Extra space at the beginning
+            //    viewMode: "years",
+            //    minViewMode: "years",
+            //    autoclose: true
+            //});
+
+            $('#FromDate').datepicker({
+                format: "dd-M-yyyy",
+                autoclose: true,
+                todayHighlight: true,
+                showOnFocus: true,
+            }).on('show', function (e) {
+                if (e.date) {
+                    $(this).data('stickyDate', e.date);
+                }
+                else {
+                    $(this).data('stickyDate', null);
+
+                }
+            }).on('hide', function () {
+                document.getElementById("ToDate").focus();
+            });
+
+
+            $('#ToDate').datepicker({
+                format: "dd-M-yyyy",
+                autoclose: true,
+                todayHighlight: true,
+                showOnFocus: true,
+            }).on('show', function (e) {
+                if (e.date) {
+                    $(this).data('stickyDate', e.date);
+                }
+                else {
+                    $(this).data('stickyDate', null);
+
+                }
+            }).on('hide', function () {
+                document.getElementById("SubmitId").focus();
+            });
+
+
+
+        });
+
+
+
+    </script>
+
+
+
+}
+
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+
+
+
+
+
+
+

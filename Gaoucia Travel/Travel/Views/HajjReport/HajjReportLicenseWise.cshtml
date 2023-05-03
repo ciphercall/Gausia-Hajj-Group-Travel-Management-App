@@ -1,0 +1,248 @@
+﻿
+
+@using System.Data
+@using System.Data.SqlClient
+@using Travel.DataAccess
+@using Travel.Models
+
+@model Travel.Models.PageModel
+
+@{
+    Layout = null;
+
+    var LoggedCompId = Model.passenger.COMPID;
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+    string companyName = "", address = "", contactNo = "";
+    TravelDbContext db = new TravelDbContext();
+    var SelectCompanyName = from n in db.AslCompanyDbSet
+
+                            where n.COMPID == compid
+                            select new { n.COMPNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectCompanyName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    var fromdate = Model.FromDate;
+    var todate = Model.ToDate;
+
+    var costcid = Model.AGlCostPool.COSTCID;
+    var licenseid = Model.passenger.LICENSEID;
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+    decimal sumdebit = 0, sumcredit = 0, result = 0, totalAsset = 0, totalLiability = 0;
+    int q = 1;
+
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+</head>
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin-top: 96px; margin-left: 77px; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+
+                @*<tr style="background-color: white">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<span>  @contactno</span></p>
+                    </td>
+
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>*@
+                <tr>
+                    <td colspan="12" align="left" style="padding: 4px; font-weight: bold">HAJJ/UMRAH REPORT - LICENSE WISE</td>
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+
+                <tr style="outline: thin solid">
+                    @{
+                        string d2 = Convert.ToString(todate);
+                        DateTime fdate2 = DateTime.Parse(d2);
+                        string ffdt2 = fdate2.ToString("dd-MMM-yyyy");
+                    }
+
+                    <td colspan="12" style="font-weight: bold;padding:4px">
+                        As On : <span style="font-weight:bold">@ffdt2</span>
+                    </td>
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="4" style="color: white; padding: 4px; font-size: small" align="center">Card No</td>
+                    <td colspan="4" style="color: white; padding: 4px; font-size: small" align="center">Passenger</td>
+                    <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Date of Birth</td>
+
+                    <td colspan="4" style="color: white; padding: 4px; font-size: small" align="center">Passport No</td>
+                    <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Expire Date</td>
+
+
+                </tr>
+            </thead>
+
+            <tbody>
+
+
+                @{
+
+                    System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["TravelDbContext"].ToString());
+
+                    string query = string.Format(
+    @"select Distinct(LICENSENM) from TAMS_LICENSE");
+                    System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn);
+                    conn.Open();
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    DataTable ds = new DataTable();
+                    da.Fill(ds);
+                    string licensenm = "";
+                    foreach (DataRow row in ds.Rows)
+                    {
+                        licensenm = row["LICENSENM"].ToString();
+
+
+
+
+                        System.Data.SqlClient.SqlConnection conn2 = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["TravelDbContext"].ToString());
+
+                        string query2 = string.Format(
+        @"SELECT LICENSENM, CARDNO, PSGRNM, DOB, PASSPORTNO, EXPIREDT FROM(
+SELECT LICENSENM, CARDNO, PSGRNM, DOB, PASSPORTNO, EXPIREDT
+FROM   TAMS_PASSENGER A 
+INNER JOIN TAMS_LICENSE C ON A.LICENSEID = C.LICENSEID
+WHERE A.COMPID='{0}' AND A.LICENSEID = '{1}' AND CARDCID = '{2}' AND A.CARDDT between  '{3}' and '{4}'
+UNION
+SELECT LICENSENM, CARDNO, PSGRNM, DOB, PASSPORTNO, EXPIREDT
+FROM   TAMS_PSNGRCARD A INNER JOIN TAMS_LICENSE C ON A.LICENSEID = C.LICENSEID
+WHERE A.COMPID='{0}' AND A.LICENSEID = '{1}' AND CARDCID = '{2}' AND A.CARDDT between '{3}' and '{4}'
+) A ORDER BY A.CARDNO",
+        compid, licenseid, costcid,fromdate,todate);
+                        System.Data.SqlClient.SqlCommand cmd2 = new System.Data.SqlClient.SqlCommand(query2, conn2);
+                        conn2.Open();
+                        SqlDataAdapter da2 = new SqlDataAdapter(cmd2);
+                        DataTable ds2 = new DataTable();
+                        da2.Fill(ds2);
+
+
+                        string crnm = "", cardno = "", psgrnm = "", add = "", dob = "", passport = "", expiredt = "", grdrel = "", mobno = "", pp = "";
+                        Int64 flag = 0;
+                        foreach (DataRow row2 in ds2.Rows)
+                        {
+                            crnm = row2["LICENSENM"].ToString();
+                            if (crnm == licensenm)
+                            {
+                                if (flag == 0)
+                                {
+                                    <tr style=" outline: thin solid">
+                                        <td colspan="18"> License Name : @crnm</td>
+
+                                   </tr>
+                                    flag = 1;
+                                }
+                                cardno = row2["CARDNO"].ToString();
+                                psgrnm = row2["PSGRNM"].ToString();
+
+
+                                dob = row2["DOB"].ToString();
+                                passport = row2["PASSPORTNO"].ToString();
+                                expiredt = row2["EXPIREDT"].ToString();
+
+
+                                string DOB = "", EXPDT = "";
+                                if (dob != "")
+                                {
+                                    DateTime dateofbirth = DateTime.Parse(dob);
+                                    DOB = dateofbirth.ToString("dd-MMM-yyyy");
+                                }
+                                if (expiredt != "")
+                                {
+                                    DateTime expdate = DateTime.Parse(expiredt);
+                                    EXPDT = expdate.ToString("dd-MMM-yyyy");
+                                }
+
+                                
+                                <tr>
+                                    <td colspan="4">@cardno</td>
+                                    <td colspan="4">@psgrnm</td>
+
+                                    <td colspan="3">@DOB</td>
+                                    <td colspan="4">@passport</td>
+                                    <td colspan="3">@EXPDT</td>
+
+                                </tr>
+
+
+
+
+                            }
+
+
+
+                        }
+
+
+                        conn2.Close();
+
+
+
+
+
+
+                    }
+
+
+                    conn.Close();
+
+
+
+
+
+
+
+
+
+                }
+
+
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

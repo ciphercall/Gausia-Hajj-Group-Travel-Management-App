@@ -1,0 +1,300 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Data.SqlTypes
+@using Travel.Models
+@model Travel.Models.PageModel
+@{
+    ViewBag.Title = "Op_PL_Statement";
+    Layout = null;
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    TravelDbContext db = new TravelDbContext();
+    var companyId = Convert.ToInt64(Model.RPDRCR.COMPID);
+
+    string companyName = "", address = "", contactNo = "";
+    var re = from m in db.AslCompanyDbSet where m.COMPID == companyId select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in re)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    DateTime fdate = Convert.ToDateTime(Model.FromDate);
+    string ddt = fdate.ToString("dd-MMM-yyyy");
+    var fromdate = ddt;
+
+    DateTime tDate = Convert.ToDateTime(Model.ToDate);
+    string tdd = tDate.ToString("dd-MMM-yyyy");
+    var todate = tdd;
+
+
+    var Cardcid = Convert.ToInt64(Model.passenger.CARDCID);
+
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+
+
+}
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+<body>
+
+    <table id="mainTable" border="0" width="100%">
+        <thead>
+            <tr>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="10%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+                <td width="5%"></td>
+
+            </tr>
+            <tr style="background-color: #00689b">
+                <td colspan="12">
+                    <h3 style="color: white;padding:4px">@compNm</h3>
+                    <p style="color:white;padding-left:4px">@Address<br />  @contactno</p>
+                </td>
+
+                <td colspan="6" style="color: white;padding:8px" align="right">
+                    Powered By<br />Alchemy Software
+                </td>
+
+            </tr>
+            <tr>
+                <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Operating Profit/Loss Statement</td>
+                <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+            </tr>
+
+            <tr style="outline: thin solid">
+                <td colspan="9" style="padding:4px;font-weight:bold">From Date : <span style="font-weight: bold">@fromdate</span></td>
+                <td colspan="9" style="font-weight: bold"> To Date : <span style="font-weight:bold">@todate</span></td>
+            </tr>
+
+            <tr style="background-color: #00689b; outline: thin solid">
+
+                <td colspan="1" style="color: white; padding: 4px" align="center">Sl</td>
+                <td colspan="3" style="color: white; padding: 4px" align="center">Card No</td>
+                <td colspan="2" style="color: white; padding: 4px" align="center">Year</td>
+                <td colspan="3" style="color: white; padding: 4px" align="center">Passenger Name</td>
+                <td colspan="3" style="color: white; padding: 4px" align="center">Sale</td>
+                <td colspan="3" style="color: white; padding: 4px" align="center">Purchase</td>
+
+                <td colspan="3" style="color: white; padding: 4px" align="center">P/L Amount</td>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                Decimal total_Sale = 0, total_Purchase = 0, total_INQTY = 0, total_OUTQTY = 0, total_Balance = 0;
+            }
+            @{
+                string cc = Convert.ToString(Cardcid);
+                var groupCarddtwithType = (from n in db.passengerDbSet
+                                           where n.COMPID == companyId && n.CARDDT >= fdate && n.CARDDT <= tDate && n.CARDCID == cc
+                                           select new { n.CARDDT, n.CARDCID }).Distinct().ToList();
+                var costheadfind = (from n in db.GLCostPMSTDbSet where n.COMPID == companyId select new { n.COSTCID, n.COSTCNM }).ToList();
+                string costpnm = "";
+                foreach (var x in costheadfind)
+                {
+                    if (x.COSTCID == Cardcid)
+                    {
+                        costpnm = Convert.ToString(x.COSTCNM);
+                        break;
+                    }
+
+                } 
+                
+                foreach (var groupBy in groupCarddtwithType)
+                {
+                    total_Sale = 0;
+                    total_Purchase = 0;
+                    total_Balance = 0;
+                    DateTime date = Convert.ToDateTime(groupBy.CARDDT);
+                    string carddt_convertDate = date.ToString("dd-MMM-yyyy");
+                   
+                    <tr>
+                        <td colspan="2" align="left" style="font-weight:bold">
+                            Date :
+                        </td>
+                        <td colspan="6" align="left" style="font-weight:bold">
+                            @carddt_convertDate
+                        </td>
+                        <td colspan="2" align="left" style="font-weight:bold">
+                            Type :
+                        </td>
+                        <td colspan="6" align="left" style="font-weight:bold">
+                            @costpnm
+                        </td>
+                    </tr>
+
+                    System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["TravelDbContext"].ToString());
+
+
+                    string query = string.Format("SELECT CARDDT,CARDCID, CARDNO, PSGRNM, SUM(SAMT) SAMT, SUM(PAMT) PAMT, SUM(SAMT) - SUM(PAMT) PLAMT FROM( " +
+                                                 "SELECT CARDDT, TAMS_PASSENGER.CARDCID, CARDNO, PSGRNM, SUM(AMOUNT) SAMT, 0 PAMT " +
+                                                 "FROM TAMS_PASSENGER LEFT OUTER JOIN TAMS_RPDRCR ON TAMS_RPDRCR.CARDID = TAMS_PASSENGER.CARDID " +
+                                                 "WHERE TAMS_RPDRCR.COMPID='{0}' AND TRANSFOR = 'RECEIVABLE' AND TAMS_RPDRCR.CARDCID = '{1}' AND TRANSDT BETWEEN '{2}' AND '{3}' " +
+                                                 "GROUP BY CARDDT, TAMS_PASSENGER.CARDCID, CARDNO, PSGRNM " +
+                                                 "UNION " +
+                                                 "SELECT CARDDT, TAMS_PASSENGER.CARDCID, CARDNO, PSGRNM, 0 SAMT, SUM(AMOUNT) PAMT " +
+                                                 "FROM TAMS_PASSENGER  LEFT OUTER JOIN TAMS_RPDRCR ON TAMS_RPDRCR.CARDID = TAMS_PASSENGER.CARDID " +
+                                                 "WHERE TAMS_RPDRCR.COMPID='{0}' AND TRANSFOR = 'PAYABLE' AND TAMS_RPDRCR.CARDCID = '{1}' AND TRANSDT BETWEEN '{2}' AND '{3}' " +
+                                                 "GROUP BY CARDDT,TAMS_PASSENGER.CARDCID, CARDNO, PSGRNM, TICKETNO, TICKETDT " +
+                                                 ") A GROUP BY CARDDT, CARDCID, CARDNO, PSGRNM " +
+                                                 "ORDER BY CARDDT, CARDCID, CARDNO", companyId, Cardcid, fdate, todate);
+
+
+                    System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn);
+                    conn.Open();
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    DataTable ds = new DataTable();
+                    da.Fill(ds);
+
+                    string carddt = "", Cardno = "", Passengername = "", TicketNo = "", Ticketdt = "", CardCID = "";
+                    Decimal Saleamount = 0, PurchaseAmount = 0, PLAmount = 0, OUTQTY = 0;
+                    Decimal Balance = 0;
+                    int i = 0;//only for first data
+                    foreach (DataRow row in ds.Rows)
+                    {
+                        i++;
+                        carddt = row["CARDDT"].ToString();
+
+                        CardCID = row["CARDCID"].ToString();
+                        if (carddt == groupBy.CARDDT.ToString() && CardCID == groupBy.CARDCID.ToString())
+                        {
+                            Cardno = row["CARDNO"].ToString();
+                            Passengername = row["PSGRNM"].ToString();
+
+                            string year = "20" + Cardno.Substring(0, 2);
+
+
+                            Saleamount = Convert.ToDecimal(row["SAMT"]);
+                            PurchaseAmount = Convert.ToDecimal(row["PAMT"]);
+                            PLAmount = Convert.ToDecimal(row["PLAMT"]);
+
+
+                            //Balance = PurchaseAmount - Saleamount;
+
+
+
+                            <tr style="outline: thin solid">
+                                <td align="center" colspan="1">
+                                    @i
+                                </td>
+                               
+                                <td align="center" colspan="2">
+                                    @Cardno
+                                </td>
+                                <td align="center" colspan="3">
+                                    @year
+                                    
+                                </td>
+                                <td align="center" colspan="3">
+                                    @Passengername
+                                </td>
+
+
+                                <td align="right" colspan="3">
+                                    @Saleamount
+                                </td>
+                                <td align="right" colspan="3">
+                                    @PurchaseAmount
+                                </td>
+
+                                <td align="right" colspan="3">
+                                    @PLAmount
+                                </td>
+                            </tr>
+
+                            total_Sale = total_Sale + Saleamount;
+                            total_Purchase = total_Purchase + PurchaseAmount;
+                            total_Balance = total_Balance + PLAmount;
+                        }
+                        else
+                        {
+                            i = 0;
+                        }
+
+
+                    }
+
+                    <tr>
+                      
+
+                        <td align="right" colspan="9" style="font-weight:bold">
+                            Total:
+                        </td>
+                        <td align="right" colspan="3" style="font-weight:bold">
+                            @total_Sale
+                        </td>
+                        <td align="right" colspan="3" style="font-weight:bold">
+                            @total_Purchase
+                        </td>
+                        <td align="right" colspan="3" style="font-weight:bold">
+                            @total_Balance
+                        </td>
+
+                    </tr>
+
+                    conn.Close();
+                }
+
+}
+
+
+
+
+        </tbody>
+    </table>
+
+
+</body>
+</html>

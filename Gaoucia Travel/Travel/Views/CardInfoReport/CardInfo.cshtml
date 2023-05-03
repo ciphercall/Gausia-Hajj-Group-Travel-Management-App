@@ -1,0 +1,202 @@
+﻿@using System.Web.UI.WebControls
+@using Travel.Models
+@model Travel.Models.PageModel
+
+@{
+    ViewBag.Title = "CardInfo";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+
+
+    TravelDbContext db = new TravelDbContext();
+
+  
+
+
+
+}
+
+
+@*<link href="~/Content/bootstrap%20datepicker%20css/datepicker.css" rel="stylesheet" />
+    <link href="~/Content/bootstrap%20datepicker%20css/datepicker3.css" rel="stylesheet" />
+
+    <script src="~/Scripts/bootstrap-datepicker.js"></script>*@
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.passenger.COMPID, new { id = "txtCompId", @Value = LoggedCompId })
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Card Information </h1>
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+
+                <div class="col-md-3">
+                    <span>@Html.Label("name", "Card No", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.passenger.CARDNO, new { @class = "form-control input-sm", id = "idCardNo",autofocus=true })
+
+                </div>
+
+                <div class="col-md-3">
+                    <span>@Html.Label("name", "Passenger Name", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.passenger.PSGRNM, new { @class = "form-control input-sm", id = "idPassenger" ,@readonly="readonly"})
+
+                </div>
+
+                <div class="col-md-3">
+                    <span>@Html.Label("name", "Card Year", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.passenger.CARDYY, new { @class = "form-control input-sm", id = "idYear", @readonly = "readonly" })
+
+                </div>
+
+
+                <div class="col-md-1">
+                    <span><br /></span>
+                    <input id="SubmitId" type="submit" class="btn btn-info" value="Print" name="command" formtarget="_blank" />
+                </div>
+                <div class="col-md-2"></div>
+            </div>
+        </div>
+
+
+
+    </div>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            @*$('#idCardNo').autocomplete({
+
+                source: '@Url.Action("TagSearch3", "RPInfo")',
+                select: function (event, ui) {
+                    var changedtxt = ui.item.value;
+                    var txtname = document.getElementById('idPassenger');
+                    var txtyear = document.getElementById('idYear');
+                    $('#idPassenger').val("");
+
+                    $('#idYear').val("");
+                    
+                    $.getJSON(
+                        "/RPInfo/CardNo_Changed", { "Changedtxt": changedtxt },
+                        function (myData) {
+                            txtname.value = myData.name;
+                            txtyear.value = myData.year;
+                            txtOneChanged4();
+                           
+                        });
+                   
+                },
+
+                change: $('#idCardNo').keyup(_.debounce(txtOneChanged4, 500))
+
+            });*@
+
+            $('#idCardNo').autocomplete({
+
+                source: function (request, response) {
+                    //var compid = $('#txtcompid').val();
+                    //var year = $('#PATIENTYY').val();
+                    $.ajax({
+                        url: '/RPInfo/TagSearch3',
+                        type: 'GET',
+                        cache: false,
+                        data: { query: request.term },
+                        dataType: 'json',
+                        success: function (data) {
+                            response($.map(data, function (item) {
+                                return {
+                                    label: item.CARDNO,
+                                    value: item.CARDNO,
+                                    name: item.PSGRNM
+
+
+                                };
+                            }));
+                        }
+                    });
+                },
+                select: function (event, ui) {
+                    $('#idCardNo').val(ui.item.value);
+                    $('#idPassenger').val(ui.item.name);
+                    var txtyear = document.getElementById('idYear');
+                    var changedtxt = ui.item.value;
+                    $.getJSON(
+                           "/RPInfo/CardNo_Changed", { "Changedtxt": changedtxt },
+                           function (myData) {
+                              
+                               txtyear.value = myData.year;
+                               txtOneChanged4();
+                             
+                           });
+
+                
+
+
+                },
+
+
+                change: $('#idCardNo').keyup(_.debounce(txtOneChanged4, 100))
+
+            });
+
+        });
+        function txtOneChanged4() {
+
+            var changedText = $("#idCardNo").val();
+
+
+            var txtBox = document.getElementById('idCardNo');
+
+
+            if (changedText != "") {
+                $.getJSON(
+              '/RPInfo/keyword3', { "ChangedText": changedText },
+               function (result) {
+                   txtBox.value = result.Cardno;
+
+
+               });
+            }
+
+
+
+        }
+
+    </script>
+
+
+}
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+
+<script src="~/Scripts/Underscore.js"></script>
+
+
+
+

@@ -1,0 +1,247 @@
+﻿
+@using System.Data
+@using System.Data.SqlClient
+@using Travel.Models
+@model Travel.Models.PageModel
+@{
+    ViewBag.Title = "Index";
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    Int64 compid = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+
+
+    TravelDbContext db = new TravelDbContext();
+
+
+    List<SelectListItem> agentname = new List<SelectListItem>();
+    var accountname = from n in db.GlAcchartDbSet where n.COMPID == compid && n.HLEVELCD == 5 select n;
+    foreach (var glAcchart in accountname)
+    {
+        if ((glAcchart.CONTROLCD.ToString().Substring(0, 10) == Convert.ToString(compid) + "1020201") || (glAcchart.CONTROLCD.ToString().Substring(0, 10) == Convert.ToString(compid) + "1020202"))
+        {
+            agentname.Add(new SelectListItem { Text = glAcchart.ACCOUNTNM, Value = Convert.ToString(glAcchart.ACCOUNTCD) });
+        }
+
+    }
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+    string tt = currentDateTime.ToString("dd-MMM-yyyy");
+    string year = tt.Substring(7, 4);
+
+    List<SelectListItem> costcid = new List<SelectListItem>();
+    costcid.Add(new SelectListItem { Text = "ALL", Value = Convert.ToString(111) });
+    var costhead = (from n in db.GLCostPMSTDbSet where n.COMPID == compid select new { n.COSTCID, n.COSTCNM }).ToList();
+    foreach (var item in costhead)
+    {
+        costcid.Add(new SelectListItem { Text = item.COSTCNM, Value = Convert.ToString(item.COSTCID) });
+    }
+}
+
+<link href="~/Content/bootstrap_datepicker_css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap_datepicker_css/datepicker3.css" rel="stylesheet" />
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.passenger.COMPID, new { id = "txtcompid", @Value = compid })
+
+
+    <div id="contentHeaderBox">
+
+
+
+        <h1 style="padding-left:16px">
+            PASSENGER LIST - AGENT WISE
+        </h1>
+
+
+
+
+
+
+
+
+    </div>
+    <br />
+    <div class="col-md-12">
+
+        <div class="form-group">
+
+            <div class="row">
+                <div class="col-md-4">
+                    <span>@Html.Label("Agent", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.DropDownListFor(model => model.passenger.AGENTID, agentname, htmlAttributes: new { id = "", @class = "form-control" })
+                </div>
+                <div class="col-md-4">
+                    <span>@Html.Label("CARD Year", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.passenger.CARDYY, htmlAttributes: new { id = "CARDYY", @class = "form-control", @Value = year })
+                </div>
+                <div class="col-md-2">
+                    <span>@Html.Label("CARD Type", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.DropDownListFor(model => model.passenger.CARDCID, costcid, "--Select--", htmlAttributes: new { id = "CARDCID", @class = "form-control" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-4">
+                    <span>@Html.Label("From", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.FromDate, htmlAttributes: new { id = "FromDate", @class = "form-control", @Value = tt })
+                </div>
+
+
+                <div class="col-md-4">
+                    <span>@Html.Label("To", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.ToDate, htmlAttributes: new { id = "ToDate", @class = "form-control", @Value = tt })
+                </div>
+                <div class="col-md-2">
+                    <span><br /></span>
+                    <input id="SubmitId" type="submit" class="btn btn-info" value="Print" formtarget="_blank" />
+                </div>
+            </div>
+            <br />
+
+
+
+
+
+
+
+
+
+
+
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+    <script language="javascript" type="text/javascript">
+        $(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+
+            function showPosition(position) {
+                var coordinates = position.coords;
+                $("#lat").val(coordinates.latitude);
+                $("#lon").val(coordinates.longitude);
+
+                $("#latlon").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+            }
+            //function positionError(position) {
+            //    alert("!!! Error: "+position.code);
+            //}
+        });
+    </script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            $('#FromDate').datepicker({
+                format: "dd-M-yyyy",
+                autoclose: true,
+                todayHighlight: true,
+                showOnFocus: true,
+            }).on('show', function (e) {
+                if (e.date) {
+                    $(this).data('stickyDate', e.date);
+                }
+                else {
+                    $(this).data('stickyDate', null);
+
+                }
+            }).on('hide', function () {
+                document.getElementById("ToDate").focus();
+            });
+
+            //$(function () {
+            //    $("#FromDate").datepicker({ dateFormat: 'dd-M-yy', changeYear: true });
+            //});
+            //$(function () {
+            //    $("#ToDate").datepicker({ dateFormat: 'dd-M-yy', changeYear: true });
+            //});
+            $('#ToDate').datepicker({
+                format: "dd-M-yyyy",
+                autoclose: true,
+                todayHighlight: true,
+                showOnFocus: true,
+            }).on('show', function (e) {
+                if (e.date) {
+                    $(this).data('stickyDate', e.date);
+                }
+                else {
+                    $(this).data('stickyDate', null);
+
+                }
+            }).on('hide', function () {
+                document.getElementById("SubmitId").focus();
+            });
+
+            $("#CARDYY").datepicker({
+                format: "yyyy", // Notice the Extra space at the beginning
+                viewMode: "years",
+                minViewMode: "years",
+                autoclose: true
+            });
+
+
+
+
+
+        });
+
+
+
+    </script>
+
+
+
+}
+
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+
+
+
+
+
+

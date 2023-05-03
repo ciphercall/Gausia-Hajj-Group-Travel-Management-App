@@ -1,0 +1,176 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Web.UI.WebControls
+@using Travel.DataAccess
+@using Travel.Models
+@model Travel.Models.PageModel
+
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+    TravelDbContext db = new TravelDbContext();
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+    Int64 loggedUserID = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+
+
+    var permission_Check = from m in db.AslRoleDbSet
+                           where m.COMPID == compid && m.USERID == loggedUserID
+                               && m.CONTROLLERNAME == "BalanceSheet" && m.ACTIONNAME == "Index"
+                           select m;
+    var Status = "";
+    foreach (var check in permission_Check)
+    {
+        Status = check.STATUS;
+    }
+
+    if (Status == "A")
+    {
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+    decimal sumdebit = 0, sumcredit = 0, result = 0, totalAsset = 0, totalLiability = 0;
+    int q = 1;
+}
+
+<link href="~/Content/bootstrap_datepicker_css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap_datepicker_css/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.AGlMaster.COMPID, new { id = "txtCompId", @Value = LoggedCompId })
+    @*@Html.HiddenFor(model => model.AGL_accharmst.HEADCD, new { id = "txtheadcd" })*@
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Balance Sheet</h1>
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-1">@Html.Label("name", "As On:", htmlAttributes: new { @class = "control-label" })</div>
+                <div class="col-md-3">
+                    @if (TempData["BalanceSheet_Date"] != null)
+                    {
+                        @Html.TextBoxFor(model => model.ToDate, new { @class = "form-control input-sm", id = "idTodate", @Value = TempData["BalanceSheet_Date"] })
+                    }
+                    else
+                    {
+                        @Html.TextBoxFor(model => model.ToDate, new { @class = "form-control input-sm", id = "idTodate", @Value = currentDateTime.ToString("dd-MMM-yyyy") })
+                    }
+                </div>
+                @*<div class="col-md-1">
+                    <input id="SubmitId" type="submit" class="btn btn-info" value="Show" name="command" />
+                </div>*@
+                <div class="col-md-1">
+                    <input id="SubmitId" type="submit" class="btn btn-info" value="Print" name="command" formtarget="_blank" />
+                </div>
+                <div class="col-md-2"></div>
+            </div>
+        </div>
+
+
+       
+
+    </div>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            $('#idTodate').datepicker({
+                format: "dd-M-yyyy",
+                autoclose: true,
+                todayHighlight: true,
+                showOnFocus: true,
+            }).on('show', function (e) {
+                if (e.date) {
+                    $(this).data('stickyDate', e.date);
+                }
+                else {
+                    $(this).data('stickyDate', null);
+                }
+            }).on('hide', function (e) {
+                var stickyDate = $(this).data('stickyDate');
+
+                if (!e.date && stickyDate) {
+                    $(this).datepicker('setDate', stickyDate);
+                    $(this).data('stickyDate', null);
+                }
+                document.getElementById("SubmitId").focus();
+            });
+
+
+            $('#assetID_Sub > ul > li > ul.subMenu').hide(); // hide submenu initially for Asset part
+            $('#Liability_Sub > ul > li > ul.subMenu').hide(); // hide submenu initially for Liability part
+
+            $('#paneldown1').hide();
+            $('#paneldown2').hide();
+            $('#paneldown_Liability1').hide();
+            $('#paneldown_Liability2').hide();
+
+            //Asset
+            $('#paneldown1').click(function () {
+                $('#assetID_Sub').show();
+                $('#paneldown1').hide();
+                $('#panelup1').show();
+                $('#paneldown2').hide();
+                $('#panelup2').show();
+            });
+            $('#panelup1').click(function () {
+                $('#assetID_Sub').hide();
+                $('#panelup1').hide();
+                $('#paneldown1').show();
+                $('#panelup2').hide();
+                $('#paneldown2').show();
+            });
+
+            //Liability
+            $('#paneldown_Liability1').click(function () {
+                $('#Liability_Sub').show();
+                $('#paneldown_Liability1').hide();
+                $('#panelup_Liability1').show();
+                $('#paneldown_Liability2').hide();
+                $('#panelup_Liability2').show();
+            });
+            $('#panelup_Liability1').click(function () {
+                $('#Liability_Sub').hide();
+                $('#panelup_Liability1').hide();
+                $('#paneldown_Liability1').show();
+                $('#panelup_Liability2').hide();
+                $('#paneldown_Liability2').show();
+            });
+        });
+    </script>
+}

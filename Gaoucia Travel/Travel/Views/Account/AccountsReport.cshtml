@@ -1,0 +1,193 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Security.Cryptography.X509Certificates
+@using Travel.Models
+@model Travel.Models.DTO.GlAcchartDTO
+@{
+    ViewBag.Title = "AccountsReport";
+    Layout = null;
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    TravelDbContext db = new TravelDbContext();
+    Int64 companyID = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+    Int64 loggedUserID = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+
+
+    //var permission_Check = from m in db.AslRoleDbSet
+    //                       where m.COMPID == companyID && m.USERID == loggedUserID && m.CONTROLLERNAME == "Account" && m.ACTIONNAME == "Get_ChatOfAccountsReports"
+    //                       select m;
+    //var Status = "";
+    //foreach (var check in permission_Check)
+    //{
+    //    Status = check.STATUS;
+    //}
+
+    //if (Status == "A")
+    //{
+    //}
+    //else
+    //{
+    //    Response.Redirect(Url.Action("Index", "Logout"));
+    //}
+
+    string companyName = "", address = "", contactNo = "", address2 = "";
+    var re = from m in db.AslCompanyDbSet where m.COMPID == companyID select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in re)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<br /> @address2</p>
+                    </td>
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="12" align="left" style="padding: 4px; font-weight: bold">CHART OF ACCOUNTS</td>
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    @*<td colspan="4" style="color: white; padding: 4px" align="center">ACCOUNT CODE</td>*@
+                    <td colspan="14" style="color: white; padding: 4px" align="center">ACCOUNT NAME</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Level</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">STATUS</td>
+                    @*<td colspan="4" style="color: white; padding: 4px" align="center">CONTROL CODE</td>*@
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var masterData = (from m in db.GlAcchartDbSet where m.COMPID == companyID select new { m.ACCOUNTCD, m.ACCOUNTNM, m.HPOSTTP, m.CONTROLCD, m.HLEVELCD, m.HDRCRTP }).OrderBy(x => x.ACCOUNTCD).ToList();
+
+                    foreach (var masterdataList in masterData)
+                    {
+                        <tr style="outline: thin solid #807575">
+                            @*<td align="center" colspan="4" style="padding-left: 4px">
+                                    @masterdataList.ACCOUNTCD
+                                </td>*@
+                            @if (masterdataList.HLEVELCD != 5)
+                            {
+                                if (masterdataList.HLEVELCD == 2)
+                                {
+                                    <td align="left" colspan="14" style="font-weight:bold;padding-left:20px">
+                                    @masterdataList.ACCOUNTNM
+                                </td>
+                                }
+                                else if(masterdataList.HLEVELCD == 3)
+                                {
+                                     <td align="left" colspan="14" style="font-weight:bold;padding-left:40px">
+                                    @masterdataList.ACCOUNTNM
+                                </td>
+                                }
+                                else if(masterdataList.HLEVELCD == 4)
+                                {
+                                     <td align="left" colspan="14" style="font-weight:bold;padding-left:60px">
+                                    @masterdataList.ACCOUNTNM
+                                </td>
+                                }
+                                else
+                                {
+                                     <td align="left" colspan="14" style="font-weight:bold">
+                                    @masterdataList.ACCOUNTNM
+                                </td>
+                                }
+
+                            }
+                            else
+                            {
+
+                                <td align="left" colspan="14" style="padding-left:80px">
+                                    @masterdataList.ACCOUNTNM
+                                </td>
+                            }
+
+                            <td align="center" colspan="2">
+                                @masterdataList.HLEVELCD
+                            </td>
+                            <td align="center" colspan="2">
+                                @masterdataList.HPOSTTP - @masterdataList.HDRCRTP
+                            </td>
+                            @*<td align="center" colspan="4">
+                                    @masterdataList.CONTROLCD
+                                </td>*@
+                        </tr>
+
+                    }
+                }
+
+                <tr>
+                    <td><br /></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
+
+
+
+
+

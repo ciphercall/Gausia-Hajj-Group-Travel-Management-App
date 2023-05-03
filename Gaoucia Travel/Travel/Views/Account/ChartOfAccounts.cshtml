@@ -1,0 +1,317 @@
+﻿@using Travel.Models
+@model Travel.Models.DTO.GlAcchartDTO
+
+@{
+    ViewBag.Title = "ChartOfAccounts";
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    TravelDbContext db = new TravelDbContext();
+    Int64 LoggedCompId = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+    Int64 loggedUserID = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedUserID"]);
+
+    var query = from m in db.AslRoleDbSet
+                where m.COMPID == LoggedCompId && m.USERID == loggedUserID && m.CONTROLLERNAME == "Account" && m.MENUTP == "F"
+                select new { m.STATUS, m.INSERTR, m.UPDATER, m.DELETER };
+    string status = "", insert = "", update = "", delete = "";
+    foreach (var S in query)
+    {
+        status = S.STATUS;
+        insert = S.INSERTR;
+        update = S.UPDATER;
+        delete = S.DELETER;
+    }
+
+    if (status == "I")
+    {
+        Response.Redirect("~/GraphView/Index");
+    }
+
+
+
+    List<SelectListItem> listofHeadType = new List<SelectListItem>();
+    listofHeadType.Add(new SelectListItem { Text = "ASSET", Value = "1" });
+    listofHeadType.Add(new SelectListItem { Text = "LIABILITY", Value = "2" });
+    listofHeadType.Add(new SelectListItem { Text = "INCOME", Value = "3" });
+    listofHeadType.Add(new SelectListItem { Text = "EXPENDETURE", Value = "4" });
+
+
+    List<SelectListItem> listOfBranchName = new List<SelectListItem>();
+    var find_branchName = (from n in db.Asl_BranchDbSet where n.COMPID == LoggedCompId select n).OrderBy(x => x.BRANCHNM).ToList();
+    foreach (var item in find_branchName)
+    {
+        listOfBranchName.Add(new SelectListItem { Text = item.BRANCHNM, Value = Convert.ToString(item.BRANCHID) });
+    }
+
+}
+
+<link href="~/Content/newcss/ng-grid.css" rel="stylesheet" />
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Chart of Accounts</h1>
+        <div class="btn-group pull-right" id="editOption">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                <i class="fa fa-cog"></i>
+            </button>
+            <ul class="dropdown-menu pull-right" style="" role="menu">
+                <li>
+                    <a href="@Url.Action("1stLevelInfo", "Account")"><i class="fa fa-file-text"></i> 1st Level Information</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <br />
+
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <div ng-app="AccountApp" data-ng-controller="ApiAccountController">
+
+                <div class="row">
+                    <form name="addAccount" data-ng-show="addMode" @*style="width:600px;margin:0px auto;"*@>
+                        @Html.HiddenFor(model => model.COMPID, new { id = "txtcompid", style = "width:3em;", @Value = LoggedCompId })
+                        @Html.HiddenFor(model => model.INSUSERID, new { id = "txtInsertUserid", style = "width:3em;", @Value = loggedUserID })
+                        @Html.HiddenFor(model => model.Insert, new { id = "txt_Insertid", style = "width:3em;", @Value = insert })
+                        @Html.HiddenFor(model => model.Update, new { id = "txt_Updateid", style = "width:3em;", @Value = update })
+                        @Html.HiddenFor(model => model.Delete, new { id = "txt_Deleteid", style = "width:3em;", @Value = delete })
+                        @Html.HiddenFor(model => model.INSLTUDE, new { id = "latlon" })
+                        <input id="lat" type="hidden" />
+                        <input id="lon" type="hidden" />
+
+                        @Html.HiddenFor(model => model.ACCOUNTCD, new { id = "hiddenText_txtAccountCD", style = "width:3em;", @Value = delete })
+
+                        <div class="col-md-1">
+                            @Html.Label("name", "Type", htmlAttributes: new { @class = "control-label" })
+                        </div>
+                        <div class="col-md-2">
+                            @Html.DropDownListFor(model => model.HEADTP, listofHeadType, new { id = "ddlHeadType", @class = "form-control" })
+                        </div>
+                        <div class="col-md-2">
+                            @Html.Label("name", "Group Head: ", htmlAttributes: new { @class = "control-label" })
+                        </div>
+                        <div class="col-md-6">
+                            @Html.TextBoxFor(model => model.ACCOUNTNM, new { id = "txtAccountName", @class = "form-control", autofocus = true })
+                        </div>
+                        <div class="col-md-1">
+                            @Html.TextBoxFor(model => model.HLEVELCD, htmlAttributes: new { id = "txtLevelID", @class = "form-control", @readonly = "readonly" })
+                        </div>
+                       
+                        <input type="submit" value="Search" data-ng-click="search($event)" class="btn btn-primary" id="btnSearch" style="display: none" />
+                        @*<div class="col-md-1">
+                           
+                        </div>*@
+
+                    </form>
+                </div>
+                <br />
+
+                <div class="row">
+                    @*<div class="col-md-1">
+                        </div>*@
+                    <div class="col-md-12">
+                        <div class="panel panel-primary">
+                            <div class="panel-heading">Chart of Accounts </div>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <tr>
+                                       
+                                        <th>Account Head</th>
+                                        <th>Branch Name</th>
+                                        @*<th>Account Code</th>
+                                        <th>Control Code</th>*@
+                                        <th></th>
+                                    </tr>
+                                    <tr>
+                                       
+                                        <td style="width: 70%"><input type="text" class="form-control input-sm" data-ng-model="newChild.ACCOUNTNM" id="AccountNameID" required /></td>
+                                        <td style="width: 20%">@Html.DropDownListFor(model => model.BRANCHID, listOfBranchName, "--Select--", htmlAttributes: new { id = "branchNameID", @class = "form-control input-sm" }) </td>
+                                        @*<td style="width: 10%"><input type="number" class="form-control input-sm" data-ng-model="newChild.ACCOUNTCD" id="AccountCdId" min="0" max="999999999999999" placeholder="0" readonly="readonly" /></td>
+                                        <td style="width: 10%"><input type="number" class="form-control input-sm" data-ng-model="newChild.CONTROLCD" id="ControlCdId" min="0" max="999999999999999" placeholder="0" readonly="readonly" /></td>*@
+                                        <td style="width: 10%"><input type="submit" value="Insert" data-ng-click="addrow($event)" class="btn btn-primary" /></td>
+                                    </tr>
+
+                                    <tr data-ng-repeat="testitem in ChatOfAccountData">
+                                        <td hidden><strong data-ng-hide="testitem.editMode">{{testitem.ID}}</strong></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.HEADTP }}</p></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.HLEVELCD }}</p></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.ACCOUNTCD }}</p></td>
+                                       
+                                        <td>
+                                            <p data-ng-hide="testitem.editMode">{{ testitem.ACCOUNTNM }}</p>
+                                            <input class="form-control input-sm" data-ng-show="testitem.editMode" type="text" data-ng-model="testitem.ACCOUNTNM" id="gridAccountNameID" />
+                                        </td>
+                                        <td>
+                                            <p data-ng-hide="testitem.editMode">{{ testitem.BranchName }}</p>
+                                            @Html.DropDownListFor(model => model.BRANCHID, listOfBranchName, new { id = "gridBranchNameID", data_ng_show = "testitem.editMode", data_ng_model = "testitem.BRANCHID", @class = "form-control input-sm gridBranceClass" })
+                                        </td>
+                                       
+                                        <td>
+                                            <p data-ng-hide="testitem.editMode"><a data-ng-click="toggleEdit(testitem)" href="javascript:;">Edit</a> | <a data-ng-click="deleteItem(testitem)" href="javascript:;">Delete</a></p>
+                                            <p data-ng-show="testitem.editMode"><a data-ng-click="update(testitem)" href="javascript:;">Save</a> | <a data-ng-click="toggleEdit_Cancel(testitem)" href="javascript:;">Cancel</a></p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    @*<div class="col-md-1">
+                        </div>*@
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    //Latitute & longitude
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+    <script language="javascript" type="text/javascript">
+        $(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+            //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+            function showPosition(position) {
+                var coordinates = position.coords;
+                $("#lat").val(coordinates.latitude);
+                $("#lon").val(coordinates.longitude);
+
+                $("#latlon").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+            }
+        });
+    </script>
+
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            //$('#ddlMCatID').change(function () {
+            //    $('#btnSearch').click();
+            //});
+
+            // Patient Field
+            $('#txtAccountName').autocomplete({
+                source: function (request, response) {
+                    $.ajax({
+                        url: '/Account/TagSearch_Account',
+                        type: 'GET',
+                        cache: false,
+                        dataType: "json",
+                        data: {
+                            term: request.term,
+                            compid: $('#txtcompid').val(),
+                            type: $('#ddlHeadType option:selected').val()
+                        },
+                        success: function (data) {
+                            response($.map(data, function (item) {
+                                return {
+                                    label: item,
+                                    value: item
+                                };
+                            }));
+                        }
+                    });
+                },
+                change: $('#txtAccountName').keyup(_.debounce(txtOneChangedPatient, 500)),
+                select: function (event, ui) {
+                    $("#txtAccountName").val(ui.item.label);
+                    txtOneChangedPatient();
+                }
+            });
+
+
+            function txtOneChangedPatient() {
+
+                var changedText = $("#txtAccountName").val();
+                var companyid = $('#txtcompid').val();
+                var type = $('#ddlHeadType option:selected').val();
+
+                var txtBox = document.getElementById('txtAccountName');
+
+                var txt_level = document.getElementById('txtLevelID');
+                var hiddenText_txtAccountCD = document.getElementById('hiddenText_txtAccountCD');
+
+                if (changedText != "") {
+                    $.getJSON(
+                        '/Account/keyword_Account', { "ChangedText": changedText, "Companyid": companyid, "Type": type },
+                        function (myData) {
+                            txtBox.value = myData.ACCOUNTNM + " | L-" + myData.HLEVELCD;
+                            txt_level.value = myData.HLEVELCD;
+                            if (myData.HLEVELCD == 4) {
+                                $("#branchNameID").prop("disabled", false);
+                            } else {
+                                $('#branchNameID').prop("disabled", true);
+                            }
+                            hiddenText_txtAccountCD.value = myData.ACCOUNTCD;
+                            $('#btnSearch').click();
+                        });
+                }
+
+                $("#txtLevelID").val("");
+                $("#hiddenText_txtAccountCD").val("");
+            }
+
+
+        });
+    </script>
+
+    <style type="text/css">
+        .ui-autocomplete {
+            position: absolute;
+            cursor: default;
+            background: #f0ffff;
+            max-height: 200px;
+            overflow-y: auto;
+            /* prevent horizontal scrollbar */
+            overflow-x: hidden;
+            /* add padding to account for vertical scrollbar */
+            padding-right: 20px;
+        }
+    </style>
+}
+
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+@*<script src="~/Content/jquery-2.1.4/jquery-2.1.4.min.js"></script>*@
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+
+
+<script src="~/Scripts/angularjs/1.0.5/angular.js"></script>
+<script src="~/Scripts/Account/ChatofAccount.js"></script>
+<script src="~/Scripts/angularjs/ui-bootstrap-tpls-0.4.0.js"></script>
+
+
+<script src="~/Scripts/Underscore.js"></script>
+
+
+
+

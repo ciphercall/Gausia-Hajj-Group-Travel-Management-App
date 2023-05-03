@@ -1,0 +1,244 @@
+﻿
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Gaoucia Travels & Tours</title>
+
+    <!-- stylesheets -->
+    <link href="~/Content/homeDesign/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/Content/homeDesign/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="~/Content/homeDesign/owl-carousel/owl.carousel.css" rel="stylesheet" />
+    <link href="~/Content/homeDesign/owl-carousel/owl.theme.css" rel="stylesheet" />
+    <link href="~/Content/homeDesign/css/style.css" rel="stylesheet" />
+    <!-- end stylesheets -->
+    <!-- js libray -->
+    <script src="~/Content/homeDesign/js/jquery-2.1.3.js"></script>
+</head>
+<body>
+
+    <!--header start-->
+    <header>
+        <section id="header">
+            <div class="container bgColor">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="col-md-4" id="logo">
+                            <!-- <a href="index.php"><img src="images/logo.png" alt="rs" /></a> -->
+                            <a href="../Home/" style="text-decoration: none;"><h1>Gaoucia Travels & Tours</h1></a>
+                        </div>
+                        <!--left menu-->
+                        <div class="col-md-4 col-xs-12 animated fadeIn" id="leftMenu">
+                            <ul>
+                                @*<li class="active"><a href="../Home/">Home</a></li>*@
+                                @*<li>@Html.ActionLink("About", "About", "Home")</li>
+                                <li>@Html.ActionLink("Faq", "Faq", "Home")</li>
+                                <li>@Html.ActionLink("Contact", "Contact", "Home")</li>*@
+                                <!--<li> <a href="#" style="padding: 13px;"><img src="images/facebook.png" alt="facebook"></a></li>-->
+
+                            </ul>
+                        </div>
+
+                        <!--end left menu-->
+                        <!--menu right-->
+                        <div class="col-md-4 col-xs-10 pull-right text-left" id="rightMenu">
+                            <ul>
+
+                                <li><a href="../Login/">Login</a></li>
+                                <li>
+                                    @*<a href="https://www.facebook.com/AlchemySoftware" target="_blank"> <i class="fa fa-facebook"></i></a>
+                                    <a href="https://twitter.com/alchemybd" target="_blank"> <i class="fa fa-twitter"></i></a>
+                                    <a href="https://plus.google.com/100639053145643474788" target="_blank"> <i class="fa fa-google-plus"></i></a>*@
+                                </li>
+                                <!-- <li>
+                                    <a href="#" class=""> <i class="fa fa-facebook"></i></a>
+                                    <a href="#" class=""> <i class="fa fa-twitter"></i></a>
+                                    <a href="#" class=""> <i class="fa fa-google-plus"></i></a>
+                                </li> -->
+                                <!-- <li><a href="contact.php" class="">Request for DEMO : +88 01988 844 987</a></li> -->
+                            </ul>
+                        </div>
+                        <!--end menu right-->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </header>
+    <!--header end-->
+    <br>
+
+    <!--main slider start-->
+    <section id="slider">
+        <div class="container bgColor">
+            <div class="row" id="owl-rs">
+                <img src="~/Content/homeDesign/images/slider/slider1.png" alt="" />
+                <div id="sliderMsg">
+                    <h2>“Ticketing & Reservation”</h2>
+                    <h2>“Hajj & Umrah” </h2>
+                    <h2>“Visa Processing”</h2>
+                </div>
+            </div>
+            <br>
+
+            <!-- clients section -->
+            <div class="row" id="clientsSlider">
+                <div class="col-md-12">
+                    @*<h2 class="title">Our Brands</h2>*@
+                    <div class="col-md-12" id="owl-clients">
+                        <img src="~/Content/homeDesign/images/travel/gg.JPG"
+                             alt="img"
+                             data-toggle="tooltip"
+                             data-placement="top">
+
+                        <img src="~/Content/homeDesign/images/travel/gg2.JPG"
+                             alt="img"
+                             data-toggle="tooltip"
+                             data-placement="top">
+
+                        <img src="~/Content/homeDesign/images/travel/gg3.JPG"
+                             alt="img"
+                             data-toggle="tooltip"
+                             data-placement="top">
+
+                        <img src="~/Content/homeDesign/images/travel/gg4.JPG"
+                             alt="img"
+                             data-toggle="tooltip"
+                             data-placement="top">
+
+                        <img src="~/Content/homeDesign/images/travel/atab.png"
+                             alt="img"
+                           
+                             data-toggle="tooltip"
+                             data-placement="top">
+
+                        <img src="~/Content/homeDesign/images/travel/baira.jpg"
+                             alt="img"
+                            
+                             data-toggle="tooltip"
+                             data-placement="top">
+
+                        <img src="~/Content/homeDesign/images/travel/biman.png"
+                             alt="img"
+                             data-toggle="tooltip"
+                             data-placement="top">
+
+                        <img src="~/Content/homeDesign/images/travel/haab.jpg"
+                             alt="img"
+                             data-toggle="tooltip"
+                             data-placement="top">
+
+                        <img src="~/Content/homeDesign/images/travel/iata.png"
+                             alt="img"
+                             data-toggle="tooltip"
+                             data-placement="top">
+
+                      
+
+                      
+                    </div>
+                </div>
+            </div>
+            <!-- end clients section -->
+
+            <br>
+            @*<div class="row">
+                <div class="col-md-8">
+                    <h2 class="title">Welcome</h2>
+                    <p align="justify">Alchemy software finally launched its unique, incomparable, easy, user-friendly web based Hospital ERP System that is capable to satisfy need of all types of Hospital Management System. We never stop improving our services, including development methodologies, engineering practices, management techniques and QA standards to enhance our team’s capabilities and increase customer satisfaction.</p>
+
+                </div>
+                <div class="col-md-4">
+                    <h2 class="title">Integrated Services</h2>
+
+                    <ul class="square-check">
+                        <li>Information Desk/Reception</li>
+                        <li>Outdoor Patient Department (OPD)</li>
+                        <li>Indoor Patient Department (IPD)</li>
+                        <li>Operation Theatre Management(OT)</li>
+                        <li>Pathology Department</li>
+                        <li>Pharmacy  Department</li>
+                        <li>Financial Management</li>
+                        <li>General Stock</li>
+
+                    </ul>
+                </div>
+            </div>*@
+        </div>
+    </section>
+
+
+
+
+
+    <!--Top footer section-->
+
+    <section id="topFooter">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="col-md-6">
+                        <h3>
+                           Chittagong Office: 
+                        </h3>
+                        <p align="justify">
+                           Zohadia Complex,62, Muradpur, Panchlaish, Chittagong-4203<br />
+                            Bangladesh. Mobile: 88 01819 319882, 01815 844910<br />
+                            Phone: 88 031 651299, 2554008-9, 2554442, Fax: 88 031 655711<br />
+                            e-mail: gaociatravel@yahoo.com
+                        </p>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h3>
+                           Dhaka Office: 
+                        </h3>
+                        <p align="justify">
+                            28/A, VIP Road, Kakrail, (3rd Floor), Dhaka 1000, Bangladesh<br />
+                            Phone: 88 02 8317037, Fax: 88 02 8318046<br />
+                            Mobile: 88 01819 909085, 01819 319882<br />
+                            e-mail: gaociatravelsltd@yahoo.com
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br />
+    </section>
+    <!--end top footer-->
+    <!--footer part-->
+
+    <footer>
+        <section id="footer">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <p>Developed By : <a href="http://www.alchemy-bd.com" target="_blank">Alchemy Software</a></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </footer>
+    <!--end footer part-->
+
+
+
+
+    <a href="#" id="backToTop"><i data-toggle="tooltip" data-placement="top" title="Go to top" class="fa  fa-chevron-circle-up fa-2x"></i></a>
+    <!-- other scripts -->
+
+    <script src="~/Content/homeDesign/js/bootstrap.min.js"></script>
+
+
+    <script src="~/Content/homeDesign/owl-carousel/owl.carousel.js"></script>
+
+    <script src="~/Content/homeDesign/js/jquery.cookie.js"></script>
+    <script src="~/Content/homeDesign/js/functions.js"></script>
+    <!-- end other scripts -->
+</body>
+</html>
+
+
+
